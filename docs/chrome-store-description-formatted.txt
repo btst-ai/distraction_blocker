@@ -1,0 +1,53 @@
+SHORT DESCRIPTION (132 characters max):
+道 - The way to achieve your goals. A mindful productivity tool that blocks distractions and helps you stay focused through accountability.
+
+---
+
+FULL DESCRIPTION:
+
+🥷 Protect your goals 🧘
+
+Gōrudo (ゴール道) is more than a distraction blocker—it's your path to achieving what matters. Built on the philosophy of mindful productivity and self-accountability, Gōrudo is by your side to help you stay focused while respecting your need for intentional breaks.
+
+Download it, pin it to your toolbar, name your Focus Saboteurs, and then let Gōrudo protect your goals.
+
+🎨 Philosophy
+
+• Intentional choices: Every break is a conscious decision
+• Self-accountability: You set the rules, you follow them
+• Mindful friction: Light challenges prevent mindless scrolling
+• Progress tracking: See your journey, celebrate wins
+• Flexibility: Customize everything to fit your workflow
+
+📊 Privacy & Data
+
+• All data stored locally in your browser
+• No external servers or tracking
+• Your goals, blocks, and progress stay private
+• Works completely offline
+
+🚀 Perfect For
+
+• Students preparing for exams
+• Professionals working on important projects
+• Anyone building better focus habits
+• People who want accountability without harsh restrictions
+
+💡 How It Works
+
+1. Set your goals for the day
+2. Add distracting sites to your block list
+3. Work focused - Gōrudo blocks distractions automatically
+4. Take breaks intentionally - Complete a quick challenge first
+5. Track your progress - See your timeline and statistics
+6. Achieve your goals - Stay accountable to yourself
+
+⚠️ Important Note
+
+Gōrudo is not a language learning tool. The vocabulary translations used in focus challenges are automatically generated and may not be 100% accurate. They are intended solely as a friction mechanism to encourage mindful break-taking, not as a reliable language learning resource.
+
+Start your path today. 🥷 Protect your goals 🧘
+
+---
+
+Note: Gōrudo requires permission to block websites and manage tabs. All processing happens locally in your browser. No data is sent to external servers.

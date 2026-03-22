@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "Gorudo Dev",
+  "version": "1.1",
+  "description": "Block distracting sites with timed breaks and cooldowns",
+  "permissions": [
+    "storage",
+    "declarativeNetRequest",
+    "alarms",
+    "notifications",
+    "webNavigation",
+    "tabs"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background/background.js"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "assets/icons/icon16.png",
+      "48": "assets/icons/icon48.png",
+      "128": "assets/icons/icon128.png"
+    },
+    "default_title": "Gorudo Dev"
+  },
+  "icons": {
+    "16": "assets/icons/icon16.png",
+    "48": "assets/icons/icon48.png",
+    "128": "assets/icons/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "data/*.csv",
+        "assets/images/*.gif"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
+}

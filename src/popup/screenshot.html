@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="popup.css">
+  <style>
+    /* Adjustments for screenshot mode */
+    body {
+      width: 450px;
+      min-height: 600px;
+      overflow-y: visible;
+    }
+    .status {
+      background: linear-gradient(to bottom, #2a2a2a, #1a1a1a);
+      color: #fff;
+      border-color: #000;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>🥷 Protect your goals  🧘</h1>
+      <div id="status" class="status">🛡️ Focus Mode Active</div>
+      
+      <!-- End Break button (visible during break) -->
+      <button id="endBreakBtn" class="btn btn-danger btn-large" style="display:none; margin-top: 8px;">⏹ End Break</button>
+      
+      <!-- Break Whitelist Controls (visible during break) -->
+      <div id="breakWhitelistControls" class="break-whitelist-controls" style="display:none; margin-top: 10px;">
+        <div class="break-whitelist-row">
+          <label for="removeFromBreakWhitelist" class="break-whitelist-label">Remove site:</label>
+          <select id="removeFromBreakWhitelist" class="break-whitelist-select">
+            <option value="">-- No sites in break whitelist --</option>
+          </select>
+        </div>
+        <div class="break-whitelist-row">
+          <label for="addToBreakWhitelist" class="break-whitelist-label">Add site:</label>
+          <select id="addToBreakWhitelist" class="break-whitelist-select">
+            <option value="">-- All sites allowed --</option>
+          </select>
+        </div>
+        <div class="break-whitelist-row">
+          <label for="addCategoryToBreakWhitelist" class="break-whitelist-label">Add category:</label>
+          <select id="addCategoryToBreakWhitelist" class="break-whitelist-select">
+            <option value="">-- Select category --</option>
+          </select>
+        </div>
+        <div class="break-whitelist-row">
+          <label for="removeCategoryFromBreakWhitelist" class="break-whitelist-label">Remove category:</label>
+          <select id="removeCategoryFromBreakWhitelist" class="break-whitelist-select">
+            <option value="">-- Select category --</option>
+          </select>
+        </div>
+      </div>
+      
+      <!-- Snooze buttons (visible during break) -->
+      <div id="snoozeButtons" class="snooze-buttons-header" style="display:none">
+        <div id="snoozeChallengeBar" class="snooze-challenge-bar" style="display:none">
+          <button id="snoozeChallengeBarBtn" class="btn btn-snooze-challenge-bar">
+            <span id="snoozeChallengeBarEmoji">🧐</span>
+            <span>Extend the break again</span>
+            <span id="snoozeChallengeBarEmoji2">🧐</span>
+          </button>
+        </div>
+        <div id="snoozeButtonsContainer" class="snooze-buttons-container">
+          <div class="snooze-title" id="snoozeTitle">Extend break</div>
+          <div class="snooze-row-header">
+            <button class="btn btn-snooze-header" data-snooze="1" data-emoji="🧐">+1 min</button>
+            <button class="btn btn-snooze-header" data-snooze="2" data-emoji="🧐">+2 min</button>
+            <button class="btn btn-snooze-header" data-snooze="5" data-emoji="🧐">+5 min</button>
+            <button class="btn btn-snooze-header" data-snooze="10" data-emoji="🧐">+10 min</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Previous Day's Goals (hidden) -->
+    <div id="previousGoalsSection" class="section previous-goals-section" style="display:none"></div>
+
+    <!-- Daily Goals -->
+    <div class="section">
+      <h2>🎯 Today's Goals</h2>
+      <div class="add-item">
+        <input type="text" id="newGoalInput" placeholder="Add a goal..." />
+        <button id="addGoalBtn" class="btn btn-add">+</button>
+      </div>
+      <div id="goalsList" class="items-list">
+        <div class="item goal-item completed">
+          <span class="goal-text">✅ Read 30 pages of "The Pragmatic Programmer"</span>
+          <button class="btn-remove">✕</button>
+        </div>
+        <div class="item goal-item completed">
+          <span class="goal-text">✅ Finish Q3 Analytics Report</span>
+          <button class="btn-remove">✕</button>
+        </div>
+        <div class="item goal-item">
+          <span class="goal-text">⬜ Review 5 Pull Requests</span>
+          <button class="btn-remove">✕</button>
+        </div>
+        <div class="item goal-item completed">
+          <span class="goal-text">✅ Call Mom</span>
+          <button class="btn-remove">✕</button>
+        </div>
+        <div class="item goal-item">
+          <span class="goal-text">⬜ Prepare Slide Deck for Monday</span>
+          <button class="btn-remove">✕</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="section">
+      <h2 id="timelineHeader">📆 Today's Timeline (Total: 19 min break)</h2>
+      <div id="timeline" class="timeline">
+        <div class="timeline-item break-blue">
+          <div class="timeline-time">09:00 AM</div>
+          <div class="timeline-description">☕ Break (2 min)</div>
+        </div>
+        <div class="timeline-item goal">
+          <div class="timeline-time">09:35 AM</div>
+          <div class="timeline-description">🎉 Completed: Read 30 pages of "The Pragmatic Programmer"</div>
+        </div>
+        <div class="timeline-item break-yellow">
+          <div class="timeline-time">11:00 AM</div>
+          <div class="timeline-description">☕ Break (5 min)</div>
+        </div>
+        <div class="timeline-item break-orange">
+          <div class="timeline-time">12:15 PM</div>
+          <div class="timeline-description">☕ Break (12 min) (+7 min snooze)</div>
+        </div>
+        <div class="timeline-item goal">
+          <div class="timeline-time">12:30 PM</div>
+          <div class="timeline-description">🥳 Completed: Finish Q3 Analytics Report</div>
+        </div>
+        <div class="timeline-item goal">
+          <div class="timeline-time">02:00 PM</div>
+          <div class="timeline-description">🎊 Completed: Call Mom</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Block Statistics -->
+    <div class="section">
+      <h2>🛡️ Blocks Today</h2>
+      <div id="blockStats" class="block-stats">
+        <div class="block-stats-total">
+          <span class="block-count-label">Total blocks:</span>
+          <span id="totalBlocksCount" class="block-count-number">42</span>
+        </div>
+        <div id="topBlockedSites" class="top-blocked-sites">
+          <div class="top-blocked-label">Top blocked sites:</div>
+          <div id="topBlockedList" class="top-blocked-list">
+            <div class="top-blocked-item">
+              <span class="top-blocked-rank">1.</span>
+              <span class="top-blocked-domain">twitter.com</span>
+              <span class="top-blocked-count">15</span>
+            </div>
+            <div class="top-blocked-item">
+              <span class="top-blocked-rank">2.</span>
+              <span class="top-blocked-domain">instagram.com</span>
+              <span class="top-blocked-count">12</span>
+            </div>
+            <div class="top-blocked-item">
+              <span class="top-blocked-rank">3.</span>
+              <span class="top-blocked-domain">youtube.com</span>
+              <span class="top-blocked-count">8</span>
+            </div>
+            <div class="top-blocked-item">
+              <span class="top-blocked-rank">4.</span>
+              <span class="top-blocked-domain">facebook.com</span>
+              <span class="top-blocked-count">5</span>
+            </div>
+            <div class="top-blocked-item">
+              <span class="top-blocked-rank">5.</span>
+              <span class="top-blocked-domain">reddit.com</span>
+              <span class="top-blocked-count">2</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Break Controls -->
+    <div class="section">
+      <button id="takeBreakBtn" class="btn btn-primary btn-large">☕ Take a Break</button>
+      <div id="cooldownInfo" class="info-text"></div>
+    </div>
+
+    <!-- Blocked Sites -->
+    <div class="section">
+      <h2 class="collapsible-header" id="blockedSitesHeader">
+        <span class="collapse-icon">▼</span> 💣 Focus Saboteurs
+      </h2>
+      <div id="blockedSitesContent" class="collapsible-content" style="display:block">
+        <div class="add-item">
+          <input type="text" id="newSiteInput" placeholder="Core domain (e.g., youtube.com)" />
+          <select id="newSiteCategory" class="category-change-dropdown" style="margin: 0 5px;">
+            <option>Other</option>
+          </select>
+          <button id="addSiteBtn" class="btn btn-add">+</button>
+        </div>
+        <div id="sitesList" class="items-list">
+          <div class="category-header">
+            <span class="category-icon">📁</span>
+            <span class="category-name">Social</span>
+            <span class="category-count">(4)</span>
+          </div>
+          <div class="category-sites-static">
+            <div class="item">
+              <span class="site-text">facebook.com</span>
+              <select class="category-change-dropdown"><option selected>Social</option><option>Video</option></select>
+              <button class="btn-remove">Remove</button>
+            </div>
+            <div class="item">
+              <span class="site-text">instagram.com</span>
+              <select class="category-change-dropdown"><option selected>Social</option><option>Video</option></select>
+              <button class="btn-remove">Remove</button>
+            </div>
+            <div class="item">
+              <span class="site-text">twitter.com</span>
+              <select class="category-change-dropdown"><option selected>Social</option><option>Video</option></select>
+              <button class="btn-remove">Remove</button>
+            </div>
+            <div class="item">
+              <span class="site-text">x.com</span>
+              <select class="category-change-dropdown"><option selected>Social</option><option>Video</option></select>
+              <button class="btn-remove">Remove</button>
+            </div>
+          </div>
+          
+          <div class="category-header">
+            <span class="category-icon">📁</span>
+            <span class="category-name">Video</span>
+            <span class="category-count">(1)</span>
+          </div>
+          <div class="category-sites-static">
+            <div class="item">
+              <span class="site-text">youtube.com</span>
+              <select class="category-change-dropdown"><option>Social</option><option selected>Video</option></select>
+              <button class="btn-remove">Remove</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Whitelisted Sites (Collapsed) -->
+    <div class="section">
+      <h2 class="collapsible-header" id="whitelistHeader">
+        <span class="collapse-icon">▶</span> 🏝️ Discipline Exemptions
+      </h2>
+      <div id="whitelistContent" class="collapsible-content" style="display:none"></div>
+    </div>
+
+    <!-- NoGo List (Collapsed) -->
+    <div class="section">
+      <h2 class="collapsible-header" id="nogoListHeader">
+        <span class="collapse-icon">▶</span> ☣️ NO-GO ZONE (Never Unlocked)
+      </h2>
+      <div id="nogoListContent" class="collapsible-content" style="display:none"></div>
+    </div>
+
+    <!-- Settings -->
+    <div class="section settings">
+      <h2>⚙️ Settings</h2>
+      <div class="setting-row">
+        <label>Break Duration (minutes):</label>
+        <input type="number" value="5" />
+      </div>
+      <div class="setting-row">
+        <label>Time Between Breaks (minutes):</label>
+        <input type="number" value="30" />
+      </div>
+      <div class="setting-row">
+        <label>Validation Step:</label>
+        <select>
+          <option>📚 Vocabulary</option>
+          <option selected>Other</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

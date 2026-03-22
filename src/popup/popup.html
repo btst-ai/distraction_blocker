@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>🥷 Protect your goals  🧘</h1>
+      <div id="status" class="status">Loading...</div>
+      
+      <!-- End Break button (visible during break) -->
+      <button id="endBreakBtn" class="btn btn-danger btn-large" style="display:none; margin-top: 8px;">⏹ End Break</button>
+      
+      <!-- Break Whitelist Controls (visible during break) -->
+      <div id="breakWhitelistControls" class="break-whitelist-controls" style="display:none; margin-top: 10px;">
+        <div class="break-whitelist-header" style="font-weight:700; margin-bottom:5px; font-size:12px;">Modify current break:</div>
+        <div id="breakWhitelistCheckboxes" class="category-checkbox-list" style="max-height:120px;">
+          <!-- Checkboxes will be dynamically loaded here -->
+        </div>
+      </div>
+      
+      <!-- Snooze buttons (visible during break) -->
+      <div id="snoozeButtons" class="snooze-buttons-header" style="display:none">
+        <!-- Even-numbered extension: show challenge bar first -->
+        <div id="snoozeChallengeBar" class="snooze-challenge-bar" style="display:none">
+          <button id="snoozeChallengeBarBtn" class="btn btn-snooze-challenge-bar">
+            <span id="snoozeChallengeBarEmoji">🧐</span>
+            <span>Extend the break again</span>
+            <span id="snoozeChallengeBarEmoji2">🧐</span>
+          </button>
+        </div>
+        <!-- Challenge UI (hidden by default, shown when challenge bar is clicked) -->
+        <div id="snoozeChallengeContainer" class="snooze-challenge-container" style="display:none">
+          <!-- Light vocabulary challenge (5 words) -->
+          <div id="snoozeVocabChallenge" class="snooze-vocab-challenge" style="display:none">
+            <h4>Quick check (5 words)</h4>
+            <p>Click each word to reveal its translation:</p>
+            <div id="snoozeVocabWordsList" class="vocab-words-list"></div>
+            <div id="snoozeVocabProgress" class="vocab-progress">0/5 revealed</div>
+            <button id="snoozeVocabConfirmBtn" class="btn btn-primary" disabled>Continue</button>
+          </div>
+          <!-- Light math challenge -->
+          <div id="snoozeMathsChallenge" class="snooze-maths-challenge" style="display:none">
+            <h4>Quick check</h4>
+            <div id="snoozeMathsQuestion" class="maths-question"></div>
+            <div class="maths-input-row">
+              <input type="number" id="snoozeMathsAnswer" class="maths-input" placeholder="Answer" />
+              <button id="snoozeMathsSubmitBtn" class="btn btn-primary">Submit</button>
+            </div>
+            <div id="snoozeMathsAttemptInfo" class="maths-attempt-info"></div>
+          </div>
+          <!-- Light rickroll challenge (3 seconds) -->
+          <div id="snoozeRickrollChallenge" class="snooze-rickroll-challenge" style="display:none">
+            <h4>Quick check</h4>
+            <img src="../assets/images/rickroll-roll.gif" alt="Rickroll" style="max-width: 100%; height: auto;" />
+            <button id="snoozeRickrollSkipBtn" class="btn btn-primary" disabled>Continue in 3</button>
+          </div>
+        </div>
+        <!-- Normal extension buttons (shown after challenge or for odd-numbered extensions) -->
+        <div id="snoozeButtonsContainer" class="snooze-buttons-container">
+          <div class="snooze-title" id="snoozeTitle">Extend break</div>
+          <div class="snooze-row-header">
+            <button class="btn btn-snooze-header" data-snooze="1" data-emoji="🧐">+1 min</button>
+            <button class="btn btn-snooze-header" data-snooze="2" data-emoji="🧐">+2 min</button>
+            <button class="btn btn-snooze-header" data-snooze="5" data-emoji="🧐">+5 min</button>
+            <button class="btn btn-snooze-header" data-snooze="10" data-emoji="🧐">+10 min</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Previous Day's Goals (shown at start of new day) -->
+    <div id="previousGoalsSection" class="section previous-goals-section" style="display:none">
+      <h2>🗓️ Previous Goals</h2>
+      <p style="font-size: 11px; margin: 5px 0 10px 0; color: #666;">Re-add goals from your last session:</p>
+      <div class="previous-goals-actions">
+        <button id="dismissPreviousGoalsBtn" class="btn btn-secondary btn-small">Dismiss the rest</button>
+      </div>
+      <div id="previousGoalsList" class="items-list"></div>
+    </div>
+
+    <!-- Daily Goals -->
+    <div class="section">
+      <h2>🎯 Today's Goals</h2>
+      <div class="add-item">
+        <input type="text" id="newGoalInput" placeholder="Add a goal..." />
+        <button id="addGoalBtn" class="btn btn-add">+</button>
+      </div>
+      <div id="goalsList" class="items-list"></div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="section">
+      <h2 id="timelineHeader">📆 Today's Timeline</h2>
+      <div id="timeline" class="timeline"></div>
+    </div>
+
+    <!-- Block Statistics -->
+    <div class="section">
+      <h2>🛡️ Blocks Today</h2>
+      <div id="blockStats" class="block-stats">
+        <div class="block-stats-total">
+          <span class="block-count-label">Total blocks:</span>
+          <span id="totalBlocksCount" class="block-count-number">0</span>
+        </div>
+        <div id="topBlockedSites" class="top-blocked-sites">
+          <div class="top-blocked-label">Top blocked sites:</div>
+          <div id="topBlockedList" class="top-blocked-list"></div>
+        </div>
+      </div>
+    </div>
+
+            <!-- Break Controls -->
+            <div class="section">
+              <button id="takeBreakBtn" class="btn btn-primary btn-large">☕ Take a Break</button>
+              <div id="cooldownInfo" class="info-text"></div>
+              <div id="breakRequirement" class="warning-text" style="display:none">
+                🙏 Set at least 3 goals before taking a break 🙏
+              </div>
+      
+      <!-- Break Duration Confirmation -->
+      <div id="breakDurationConfirm" class="break-duration-confirm" style="display:none">
+        <h3>☕ How long do you want to break?</h3>
+        <div class="duration-selector">
+          <label>Duration (minutes):</label>
+          <input type="number" id="breakDurationSelector" min="1" max="60" />
+        </div>
+        <div class="unlock-selector">
+          <label>What to unlock?</label>
+          
+          <div class="unlock-all-container" style="margin-bottom: 8px;">
+            <button id="selectAllCategoriesBtn" class="btn btn-secondary btn-small" style="width:100%">Select All Categories</button>
+          </div>
+          
+          <div id="breakCategoryList" class="category-checkbox-list">
+            <!-- Checkboxes will be dynamically loaded here -->
+          </div>
+        </div>
+        <div class="vocab-buttons">
+          <button id="confirmDurationBtn" class="btn btn-primary btn-large">Continue</button>
+          <button id="cancelDurationBtn" class="btn btn-danger btn-small">Cancel</button>
+        </div>
+      </div>
+      
+      <!-- Vocabulary Challenge -->
+      <div id="vocabChallenge" class="vocab-challenge" style="display:none">
+        <h3>🇬🇷 Vocabulary Challenge!</h3>
+        <p>Click each word to reveal its translation:</p>
+        <div id="showTranscriptionContainer" class="transcription-toggle" style="display:none">
+          <label>
+            <input type="checkbox" id="showTranscriptionCheckbox" checked />
+            <span>Show pronunciation</span>
+          </label>
+        </div>
+        <div id="vocabWordsList" class="vocab-words-list"></div>
+        <div class="vocab-progress">
+          <span id="vocabProgress">0/10 revealed</span>
+        </div>
+        <div class="vocab-buttons">
+          <button id="confirmBreakBtn" class="btn btn-primary btn-large" disabled>✅ Confirm Break</button>
+          <button id="cancelVocabBtn" class="btn btn-danger btn-small">Cancel</button>
+        </div>
+      </div>
+      
+      <!-- Maths Challenge -->
+      <div id="mathsChallenge" class="vocab-challenge" style="display:none">
+        <h3>🔢 Maths Challenge!</h3>
+        <p id="mathsQuestion" style="font-size: 18px; font-weight: bold; margin: 20px 0 10px 0;"></p>
+        <div id="mathsAttemptInfo" style="font-size: 11px; color: #666; margin-bottom: 10px; text-align: center;"></div>
+        <div class="vocab-buttons">
+          <div class="maths-input-row">
+            <input type="number" id="mathsAnswer" placeholder="Your answer" class="maths-input" />
+            <button id="submitMathsBtn" class="btn btn-primary btn-medium">✅ Submit</button>
+            <button id="cancelMathsBtn" class="btn btn-danger btn-medium">Cancel</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Rickroll Challenge -->
+      <div id="rickrollChallenge" class="vocab-challenge" style="display:none">
+        <h3>🎵 Never Gonna Give You Up!</h3>
+        <img src="../assets/images/rickroll-roll.gif" style="width: 100%; max-width: 400px; margin: 20px auto; display: block;" alt="Rickroll GIF" />
+        <div class="vocab-buttons">
+          <button id="skipRickrollBtn" class="btn btn-primary btn-large" disabled>Continue in 5</button>
+          <button id="cancelRickrollBtn" class="btn btn-danger btn-small">Cancel</button>
+        </div>
+      </div>
+      
+      <!-- Reset Cooldown (hidden option) -->
+      <div class="reset-cooldown">
+        <a href="#" id="resetCooldownLink" class="special-link">or reset cooldown now...</a>
+        <div id="resetCooldownForm" class="special-form" style="display:none">
+          <span style="font-size: 10px; color: #666;">Complete validation challenge (harder)</span>
+          <button id="resetCooldownBtn" class="btn btn-secondary btn-small">Reset</button>
+          <a href="#" id="cancelResetBtn" class="cancel-link">cancel</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Blocked Sites (Collapsible) -->
+    <div class="section">
+      <h2 class="collapsible-header" id="blockedSitesHeader">
+        <span class="collapse-icon">▶</span> 💣 Focus Saboteurs
+      </h2>
+      <div id="blockedSitesContent" class="collapsible-content" style="display:none">
+        <p style="font-size: 11px; color: #666; margin-bottom: 10px;">
+          You'll  only be able to access them during breaks.
+        </p>
+        <div class="add-item">
+          <input type="text" id="newSiteInput" placeholder="Core domain (e.g., youtube.com)" />
+          <select id="newSiteCategory" class="category-select" style="max-width: 90px; margin-left: 5px; font-size: 11px;">
+            <option value="Other">Other</option>
+            <option value="Social">Social</option>
+            <option value="Video">Video</option>
+            <option value="News">News</option>
+            <option value="Sports">Sports</option>
+            <option value="Games">Games</option>
+            <option value="Shopping">Shopping</option>
+            <option value="new">+ New...</option>
+          </select>
+          <button id="addSiteBtn" class="btn btn-add">+</button>
+        </div>
+        <div id="sitesList" class="items-list"></div>
+      </div>
+    </div>
+
+    <!-- Whitelisted Sites (Collapsible) -->
+    <div class="section">
+      <h2 class="collapsible-header" id="whitelistHeader">
+        <span class="collapse-icon">▶</span> 🏝️ Discipline Exemptions
+      </h2>
+      <div id="whitelistContent" class="collapsible-content" style="display:none">
+        <p style="font-size: 11px; color: #666; margin-bottom: 10px;">
+          ALWAYS accessible, even if their parent domain is blocked (e.g., music.youtube.com when youtube.com is blocked).
+        </p>
+        <div class="add-item">
+          <input type="text" id="newWhitelistInput" placeholder="Domain to allow (e.g., accounts.google.com)" />
+          <button id="addWhitelistBtn" class="btn btn-add">+</button>
+        </div>
+        <div id="whitelistList" class="items-list"></div>
+      </div>
+    </div>
+
+    <!-- NoGo List (Collapsible) -->
+    <div class="section">
+      <h2 class="collapsible-header" id="nogoListHeader">
+        <span class="collapse-icon">▶</span> ☣️ NO-GO ZONE (Never Unlocked)
+      </h2>
+      <div id="nogoListContent" class="collapsible-content" style="display:none">
+        <p style="font-size: 11px; color: #666; margin-bottom: 10px;">
+          Sites in this list are NEVER unlocked, even during breaks. To remove a site, click the button and wait 15 minutes.
+        </p>
+        <div class="add-item">
+          <input type="text" id="newNoGoListInput" placeholder="Domain to add to nogo list" />
+          <button id="addNoGoListBtn" class="btn btn-add">+</button>
+        </div>
+        <div id="nogoListList" class="items-list"></div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="section settings">
+      <h2>⚙️ Settings</h2>
+      <div class="setting-row">
+        <label>Break Duration (minutes):</label>
+        <input type="number" id="breakDuration" min="1" max="60" />
+      </div>
+      <div class="setting-row">
+        <label>Time Between Breaks (minutes):</label>
+        <input type="number" id="cooldownDuration" min="1" max="120" />
+      </div>
+      <div class="setting-row">
+        <label>Validation Step:</label>
+        <select id="challengeType">
+          <option value="vocabulary">📚 Vocabulary</option>
+          <option value="maths">🔢 Maths Challenge</option>
+          <option value="rickroll">Other</option>
+        </select>
+      </div>
+      <div class="setting-row" id="vocabLanguageRow" style="display:none;">
+        <label>Language:</label>
+        <select id="vocabLanguage">
+          <option value="en_fr" selected>🇫🇷 French</option>
+          <option value="en_de">🇩🇪 German</option>
+          <option value="en_es">🇪🇸 Spanish</option>
+          <option value="en_it">🇮🇹 Italian</option>
+          <option value="en_ar">🇸🇦 Arabic</option>
+          <option value="en_ko">🇰🇷 Korean</option>
+          <option value="en_ja">🇯🇵 Japanese</option>
+          <option value="en_uk">🇺🇦 Ukrainian</option>
+          <option value="en_pt">🇵🇹 Portuguese</option>
+          <option value="en_vi">🇻🇳 Vietnamese</option>
+          <option value="fr_gr">🇫🇷🇬🇷 French/Greek</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <label>Redirect Blocked Sites:</label>
+        <div class="radio-group">
+          <label class="radio-label">
+            <input type="radio" name="redirectType" id="redirectGif" value="gif" checked />
+            GIF
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="redirectType" id="redirectDonation" value="donation" />
+            Donation
+          </label>
+        </div>
+      </div>
+
+      <!-- Advanced Dictionary Settings -->
+      <div class="advanced-settings-toggle" id="advancedSettingsToggle">
+        ▶ Advanced Dictionary Settings
+      </div>
+      <div class="advanced-settings-content" id="advancedSettingsContent" style="display:none;">
+        <div class="current-dictionary-info">
+          <span class="dict-label">Current Dictionary:</span>
+          <span class="dict-name" id="currentDictionaryName">Loading...</span>
+        </div>
+        
+        <div class="setting-stats">
+          <div class="stat-item">
+            <span class="stat-label">Total Words:</span>
+            <span class="stat-value" id="totalWordsCount">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Manually Added:</span>
+            <span class="stat-value" id="manuallyAddedCount">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Removed:</span>
+            <span class="stat-value" id="manuallyRemovedCount">0</span>
+          </div>
+        </div>
+        
+        <div class="add-word-form">
+          <h4>Add New Word</h4>
+          <div class="input-group">
+            <input type="text" id="newWordInput" placeholder="Word (e.g. Hello)" style="flex: 2;" />
+            <input type="text" id="newTranslationInput" placeholder="Trans. (e.g. Bonjour)" style="flex: 2;" />
+            <input type="text" id="newTranscriptionInput" placeholder="Pronun. (optional)" style="flex: 1.5;" />
+            <button id="addWordBtn" class="btn btn-add btn-small">Add</button>
+          </div>
+        </div>
+        
+        <div class="bulk-import-section">
+          <div class="section-header">
+            <h4>Bulk Import (CSV)</h4>
+            <button id="csvHelpBtn" class="btn-help">?</button>
+          </div>
+          <div id="csvHelpContent" class="help-content" style="display:none;">
+            <p><strong>Format:</strong> Word,Translation,Pronunciation,Similar</p>
+            <pre>Word,Translation,Pronunciation,0
+Cat,Chat,,0
+Dog,Inu,Inu,0</pre>
+            <p>Pronunciation is optional (for non-Latin scripts). 'Similar' is 0 or 1.</p>
+          </div>
+          <textarea id="bulkImportInput" placeholder="Paste CSV content here...
+Example:
+Hello,Bonjour,,0
+Cat,Chat,,0" rows="4"></textarea>
+          <button id="bulkImportBtn" class="btn btn-primary btn-small" style="width:100%; margin-top:5px;">Import Words</button>
+        </div>
+
+        <div class="custom-dict-section">
+          <h4>Custom Dictionaries</h4>
+          <button id="showCreateDictBtn" class="btn btn-secondary btn-small" style="width:100%">+ Create New Dictionary</button>
+          
+          <div id="createDictForm" class="create-dict-form" style="display:none; margin-top:10px; padding:10px; border:1px dashed #999; background:#fff;">
+            <div class="input-group" style="margin-bottom:8px;">
+              <input type="text" id="newDictName" placeholder="Dictionary Name (e.g. My List)" />
+              <input type="text" id="newDictIcon" placeholder="Icon (e.g. 📚)" style="width:50px;" maxlength="4" />
+            </div>
+            <textarea id="newDictWords" placeholder="Initial words (CSV format)..." rows="3"></textarea>
+            <div style="display:flex; gap:5px; margin-top:5px;">
+              <button id="saveNewDictBtn" class="btn btn-primary btn-small" style="flex:1;">Create</button>
+              <button id="cancelNewDictBtn" class="btn btn-danger btn-small">Cancel</button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="export-section">
+          <h4>Export Dictionary</h4>
+          <button id="copyDictionaryBtn" class="btn btn-secondary btn-small" style="width:100%">📋 Copy Dictionary to Clipboard</button>
+          <div id="copyFeedback" class="copy-feedback" style="display:none">Copied!</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
+
