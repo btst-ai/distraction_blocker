@@ -77,7 +77,6 @@ let state = {
     'flagle-game.com',
     'geoguessr.com',
     'sporcle.com',
-    'gmail.com',
     'wikipedia.org',
     'electricitymaps.com',
     'photos.google.com',
@@ -123,7 +122,6 @@ let state = {
     'flagle-game.com': 'Games',
     'geoguessr.com': 'Games',
     'sporcle.com': 'Games',
-    'gmail.com': 'Other',
     'wikipedia.org': 'Other',
     'electricitymaps.com': 'Other',
     'photos.google.com': 'Other',
@@ -138,7 +136,6 @@ let state = {
     'temu.com',
     'wish.com',
     'aliexpress.com',
-    'x.com'
   ],
   nogoListRemovalTimers: {}, // domain -> {startTime, endTime}
   // Whitelist - exceptions that bypass blocking (higher priority)

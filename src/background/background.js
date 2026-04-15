@@ -449,8 +449,25 @@ function saveState() {
   });
 }
 
-// Load state
-chrome.storage.local.get(['state', 'backup_state'], async (result) => {
+// Flag to track if state has been loaded from storage
+let stateLoaded = false;
+let stateReadyPromise = null;
+
+// The central initialization function
+function initializeState() {
+  if (stateReadyPromise) return stateReadyPromise;
+
+  stateReadyPromise = new Promise((resolve) => {
+    // Log the startup event
+    chrome.storage.local.get(['systemLogs'], (logResult) => {
+      const logs = logResult.systemLogs || [];
+      logs.push({ event: 'startup', time: new Date().toISOString() });
+      if (logs.length > 50) logs.shift(); // Keep last 50
+      chrome.storage.local.set({ systemLogs: logs });
+    });
+
+    // Load state
+    chrome.storage.local.get(['state', 'backup_state'], async (result) => {
   // CRITICAL: Check for storage errors first
   if (chrome.runtime.lastError) {
     console.error('❌ STORAGE ERROR: Failed to load state from chrome.storage.local');
@@ -705,7 +722,16 @@ chrome.storage.local.get(['state', 'backup_state'], async (result) => {
   
   // Check for new day every hour (only after state is loaded)
   setInterval(checkNewDay, 60 * 60 * 1000);
+  
+  resolve();
 });
+  });
+
+  return stateReadyPromise;
+}
+
+// Kickoff initialization on worker start
+initializeState();
 
 // Legacy function - kept for compatibility but no longer needed
 // We use webNavigation and tabs for blocking
@@ -1054,11 +1080,12 @@ chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) =
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log('📨 Message:', request.action);
   
-  if (request.action === 'getState') {
-    sendResponse({ state, isFirstBreak: !state.hasSetGoalsToday });
-    return true; // Indicate we will send a response
-
-  } else if (request.action === 'startBreak') {
+  initializeState().then(async () => {
+    if (request.action === 'getState') {
+      sendResponse({ state, isFirstBreak: !state.hasSetGoalsToday });
+      return;
+  
+    } else if (request.action === 'startBreak') {
     const duration = request.duration || null;
     const unlockCategories = request.unlockCategories || [];
     const unlockAll = request.unlockAll || false;
@@ -1811,9 +1838,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       console.log(`➖ Removed category '${category}' from break whitelist (${removedCount} sites)`);
       sendResponse({ success: true, count: removedCount });
     }
-  }
-  
-  return true;
+  });
   
   return true;
 });
@@ -1825,13 +1850,10 @@ const recentlyBlocked = new Map(); // tabId -> {url, timestamp}
 let stateLoaded = false;
 
 // Function to check and block URLs
-function checkAndBlockUrl(url, tabId, source) {
+async function checkAndBlockUrl(url, tabId, source) {
   // CRITICAL: Don't check URLs until state is loaded from storage
   // This prevents race condition where default state (onBreak: false) is used
-  if (!stateLoaded) {
-    console.log(`⏳ State not loaded yet, skipping check for: ${url}`);
-    return;
-  }
+  await initializeState();
   
   const urlLower = url.toLowerCase();
   
