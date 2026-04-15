@@ -1838,6 +1838,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       console.log(`➖ Removed category '${category}' from break whitelist (${removedCount} sites)`);
       sendResponse({ success: true, count: removedCount });
     }
+  }
   });
   
   return true;
@@ -1845,9 +1846,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // Track recently blocked URLs to prevent duplicate checks
 const recentlyBlocked = new Map(); // tabId -> {url, timestamp}
-
-// Flag to track if state has been loaded from storage
-let stateLoaded = false;
 
 // Function to check and block URLs
 async function checkAndBlockUrl(url, tabId, source) {
