@@ -1,6 +1,30 @@
 
 
 
+// Global error logging for unhandled promise rejections
+self.addEventListener('unhandledrejection', (event) => {
+  console.error('💥 Unhandled Promise Rejection:', event.reason);
+  
+  // Log to systemLogs in storage so we have a persistent record of crashes
+  chrome.storage.local.get(['systemLogs'], (result) => {
+    if (chrome.runtime.lastError) return;
+    
+    const logs = result.systemLogs || [];
+    const errorMessage = event.reason ? (event.reason.message || event.reason.toString()) : 'Unknown reason';
+    const errorStack = event.reason && event.reason.stack ? event.reason.stack : '';
+    
+    logs.push({ 
+      event: 'unhandled_rejection', 
+      time: new Date().toISOString(),
+      message: errorMessage,
+      stack: errorStack
+    });
+    
+    if (logs.length > 50) logs.shift();
+    chrome.storage.local.set({ systemLogs: logs });
+  });
+});
+
 // Track if this is a fresh install or reload
 let isFirstRun = true;
 let installReason = 'unknown';
@@ -41,49 +65,53 @@ let state = {
   // Note: mail.google.com is normalized to gmail.com
   blockedSites: [
     // BLOCKED_SITES_START
-    'youtube.com',
-    'facebook.com',
-    'instagram.com',
-    'x.com',
-    'twitter.com',
-    'reddit.com',
-    'linkedin.com',
-    'tiktok.com',
-    'bsky.app',
-    'amazon.com',
-    'ebay.com',
     'chess.com',
-    'strava.com',
-    'twitch.tv',
+    'geoguessr.com',
+    'sporcle.com',
     'bbc.com',
     'letterboxd.com',
+    'wikipedia.org',
+    'xkcd.com',
+    'amazon.com',
+    'ebay.com',
+    'bsky.app',
+    'facebook.com',
+    'instagram.com',
+    'linkedin.com',
+    'reddit.com',
+    'twitter.com',
+    'x.com',
+    'strava.com',
     'netflix.com',
-    'geoguessr.com',
-    'sporcle.com'
+    'tiktok.com',
+    'twitch.tv',
+    'youtube.com'
     // BLOCKED_SITES_END
   ],
   // Category mapping for blocked sites (domain -> category)
   siteCategories: {
         // SITE_CATEGORIES_START
-    'youtube.com': 'Video',
-    'facebook.com': 'Social',
-    'instagram.com': 'Social',
-    'x.com': 'Social',
-    'twitter.com': 'Social',
-    'reddit.com': 'Social',
-    'linkedin.com': 'Social',
-    'tiktok.com': 'Video',
-    'bsky.app': 'Social',
-    'amazon.com': 'Shopping',
-    'ebay.com': 'Shopping',
     'chess.com': 'Games',
-    'strava.com': 'Sports',
-    'twitch.tv': 'Video',
+    'geoguessr.com': 'Games',
+    'sporcle.com': 'Games',
     'bbc.com': 'News',
     'letterboxd.com': 'Other',
+    'wikipedia.org': 'Other',
+    'xkcd.com': 'Other',
+    'amazon.com': 'Shopping',
+    'ebay.com': 'Shopping',
+    'bsky.app': 'Social',
+    'facebook.com': 'Social',
+    'instagram.com': 'Social',
+    'linkedin.com': 'Social',
+    'reddit.com': 'Social',
+    'twitter.com': 'Social',
+    'x.com': 'Social',
+    'strava.com': 'Sports',
     'netflix.com': 'Video',
-    'geoguessr.com': 'Games',
-    'sporcle.com': 'Games'
+    'tiktok.com': 'Video',
+    'twitch.tv': 'Video',
+    'youtube.com': 'Video'
     // SITE_CATEGORIES_END
   },
   // NoGo List - sites that are NEVER unlocked, even during breaks (highest priority blocking)
@@ -402,8 +430,25 @@ function saveState() {
   });
 }
 
-// Load state
-chrome.storage.local.get(['state', 'backup_state'], async (result) => {
+// Flag to track if state has been loaded from storage
+let stateLoaded = false;
+let stateReadyPromise = null;
+
+// The central initialization function
+function initializeState() {
+  if (stateReadyPromise) return stateReadyPromise;
+
+  stateReadyPromise = new Promise((resolve) => {
+    // Log the startup event
+    chrome.storage.local.get(['systemLogs'], (logResult) => {
+      const logs = logResult.systemLogs || [];
+      logs.push({ event: 'startup', time: new Date().toISOString() });
+      if (logs.length > 50) logs.shift(); // Keep last 50
+      chrome.storage.local.set({ systemLogs: logs });
+    });
+
+    // Load state
+    chrome.storage.local.get(['state', 'backup_state'], async (result) => {
   // CRITICAL: Check for storage errors first
   if (chrome.runtime.lastError) {
     console.error('❌ STORAGE ERROR: Failed to load state from chrome.storage.local');
@@ -453,6 +498,11 @@ chrome.storage.local.get(['state', 'backup_state'], async (result) => {
 
   }
   
+  if ((!result || (!result.state && !result.backup_state)) && installReason === 'unknown') {
+    // Give onInstalled event a moment to fire if this is a fresh install
+    await new Promise(r => setTimeout(r, 250));
+  }
+
   let loadedState = null;
   let source = 'none';
 
@@ -486,19 +536,13 @@ chrome.storage.local.get(['state', 'backup_state'], async (result) => {
     
     // For arrays like whitelistedSites and blockedSites, merge unique values (normalize first)
     if (savedState.whitelistedSites) {
-      // Normalize both saved and default, then combine and remove duplicates
-      const normalizedSaved = savedState.whitelistedSites.map(site => normalizeDomain(site));
-      const normalizedDefaults = state.whitelistedSites.map(site => normalizeDomain(site));
-      const combined = [...new Set([...normalizedDefaults, ...normalizedSaved])];
-      savedState.whitelistedSites = combined;
+      // Use the user's saved list, only normalize it
+      savedState.whitelistedSites = savedState.whitelistedSites.map(site => normalizeDomain(site));
     }
     
     if (savedState.blockedSites) {
-      // Normalize both saved and default, then combine and remove duplicates
-      const normalizedSaved = savedState.blockedSites.map(site => normalizeDomain(site));
-      const normalizedDefaults = state.blockedSites.map(site => normalizeDomain(site));
-      const combined = [...new Set([...normalizedDefaults, ...normalizedSaved])];
-      savedState.blockedSites = combined;
+      // Use the user's saved list, only normalize it
+      savedState.blockedSites = savedState.blockedSites.map(site => normalizeDomain(site));
     }
     
     // Initialize blockStats if missing
@@ -650,7 +694,16 @@ chrome.storage.local.get(['state', 'backup_state'], async (result) => {
   
   // Check for new day every hour (only after state is loaded)
   setInterval(checkNewDay, 60 * 60 * 1000);
+  
+  resolve();
 });
+  });
+
+  return stateReadyPromise;
+}
+
+// Kickoff initialization on worker start
+initializeState();
 
 // Legacy function - kept for compatibility but no longer needed
 // We use webNavigation and tabs for blocking
@@ -709,7 +762,7 @@ function checkNewDay() {
 }
 
 // Start break
-async function startBreak(customDuration = null, unlockCategories = null, unlockAll = false) {
+async function startBreak(customDuration = null, unlockCategories = null, unlockAll = false, sendReminders = false, reminderInterval = 10) {
   const duration = customDuration || state.breakDuration;
 
 
@@ -769,10 +822,17 @@ async function startBreak(customDuration = null, unlockCategories = null, unlock
   chrome.alarms.create('breakEnd', { when: state.breakEndTime });
   
   // Set alarm for notification warning (based on breakWarningTime setting)
-  const warningMinutes = state.breakWarningTime || 1;
-  const warningTime = state.breakEndTime - (warningMinutes * 60 * 1000);
-  if (warningTime > now) {
-    chrome.alarms.create('breakWarning', { when: warningTime });
+  const warningMinutes = state.breakWarningTime || 2;
+  const timeUntilWarning = duration - warningMinutes;
+  
+  if (timeUntilWarning > 0) {
+    chrome.alarms.create('breakWarning', { delayInMinutes: timeUntilWarning });
+
+  }
+  
+  // Set up periodic reminders if requested
+  if (sendReminders && reminderInterval > 0) {
+    chrome.alarms.create('breakReminder', { periodInMinutes: reminderInterval });
 
   }
   
@@ -797,6 +857,22 @@ async function endBreak() {
       breakEvent.endedEarly = true;
       breakEvent.actualDuration = actualDuration;
     }
+  } else {
+    // Trigger notification if break finished naturally
+    const notificationId = `breakEnd_${Date.now()}`;
+    chrome.notifications.create(notificationId, {
+      type: 'basic',
+      iconUrl: chrome.runtime.getURL('assets/icons/icon128.png'),
+      title: '🎬 Break Over!',
+      message: 'Your break has officially ended. Time to get back to focus!',
+      priority: 1,
+      contextMessage: 'Gorudo'
+    }, (id) => {
+
+      setTimeout(() => {
+        chrome.notifications.clear(id);
+      }, 10000);
+    });
   }
   
   state.onBreak = false;
@@ -810,8 +886,18 @@ async function endBreak() {
   state.breakWhitelist = []; // Clear break whitelist when break ends
   state.cooldownEndTime = now + (state.cooldownDuration * 60 * 1000);
   
-  // Clear warning alarm if break ended early
+  // Clear warning alarm and notification if break ended
   chrome.alarms.clear('breakWarning');
+  if (state.warningNotificationId) {
+    chrome.notifications.clear(state.warningNotificationId);
+    state.warningNotificationId = null;
+  }
+  // Clear periodic reminder alarm and notification
+  chrome.alarms.clear('breakReminder');
+  if (state.reminderNotificationId) {
+    chrome.notifications.clear(state.reminderNotificationId);
+    state.reminderNotificationId = null;
+  }
   
   chrome.alarms.create('cooldownEnd', { when: state.cooldownEndTime });
   saveState();
@@ -842,10 +928,11 @@ function extendBreak(additionalMinutes) {
   // Set new alarms
   chrome.alarms.create('breakEnd', { when: state.breakEndTime });
   
-  const warningMinutes = state.breakWarningTime || 1;
-  const warningTime = state.breakEndTime - (warningMinutes * 60 * 1000);
-  if (warningTime > now) {
-    chrome.alarms.create('breakWarning', { when: warningTime });
+  const warningMinutes = state.breakWarningTime || 2;
+  const timeUntilWarning = (state.breakEndTime - now) / 60000 - warningMinutes;
+  
+  if (timeUntilWarning > 0) {
+    chrome.alarms.create('breakWarning', { delayInMinutes: timeUntilWarning });
   }
   
   saveState();
@@ -854,15 +941,50 @@ function extendBreak(additionalMinutes) {
 
 // Alarms
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === 'breakEnd') {
-    endBreak();
-  } else if (alarm.name === 'cooldownEnd') {
-    state.cooldownEndTime = null;
-    saveState();
-  } else if (alarm.name === 'breakWarning') {
-    showBreakWarningNotification();
-  }
+  initializeState().then(() => {
+    if (alarm.name === 'breakEnd') {
+      endBreak();
+    } else if (alarm.name === 'cooldownEnd') {
+      state.cooldownEndTime = null;
+      saveState();
+    } else if (alarm.name === 'breakWarning') {
+      showBreakWarningNotification();
+    } else if (alarm.name === 'breakReminder') {
+      showBreakReminderNotification();
+    }
+  });
 });
+
+// Show break reminder notification
+function showBreakReminderNotification() {
+
+  const notificationId = `breakReminder_${Date.now()}`;
+  
+  if (state.reminderNotificationId) {
+    chrome.notifications.clear(state.reminderNotificationId);
+  }
+  state.reminderNotificationId = notificationId;
+  saveState();
+
+  const minutesOnBreak = state.breakStartTime ? Math.round((Date.now() - state.breakStartTime) / 60000) : 0;
+  const messageText = minutesOnBreak > 0 
+    ? `You have been on break for ${minutesOnBreak} minutes, time flies!`
+    : 'Just a friendly reminder that you are currently taking a break.';
+
+  chrome.notifications.create(notificationId, {
+    type: 'basic',
+    iconUrl: chrome.runtime.getURL('assets/icons/icon128.png'),
+    title: '😌 Enjoying your mindful break ?',
+    message: messageText,
+    priority: 1,
+    contextMessage: 'Gorudo'
+  }, (id) => {
+
+    setTimeout(() => {
+      chrome.notifications.clear(id);
+    }, 10000);
+  });
+}
 
 // Show break warning notification
 function showBreakWarningNotification() {
@@ -872,153 +994,141 @@ function showBreakWarningNotification() {
     ? '⏰ Break Ending in 1 Minute!' 
     : `⏰ Break Ending in ${warningMinutes} Minutes!`;
   
-  // Clear any existing notification first to prevent errors
-  chrome.notifications.clear('breakWarning', (wasCleared) => {
+  const notificationId = `breakWarning_${Date.now()}`;
+  
+  // Clear any existing warning notification
+  if (state.warningNotificationId) {
+    chrome.notifications.clear(state.warningNotificationId);
+  }
+  state.warningNotificationId = notificationId;
+  saveState();
+  
+  chrome.notifications.create(notificationId, {
+    type: 'basic',
+    iconUrl: chrome.runtime.getURL('assets/icons/icon128.png'),
+    title: title,
+    message: 'Accept it or extend it...',
+    priority: 1,
+    contextMessage: 'Gorudo'
+  }, (id) => {
     if (chrome.runtime.lastError) {
-      console.warn('⚠️ Error clearing previous notification (ignoring):', chrome.runtime.lastError.message);
-    }
-    
-    chrome.notifications.create('breakWarning', {
-      type: 'basic',
-      iconUrl: chrome.runtime.getURL('assets/icons/icon128.png'),
-      title: title,
-      message: 'Open the extension popup to extend your break',
-      priority: 2,
-      requireInteraction: true // Keep it visible until user interacts
-    }, (notificationId) => {
-      if (chrome.runtime.lastError) {
-        console.error('❌ Failed to create notification:', chrome.runtime.lastError);
-      } else {
+      console.error('❌ Failed to create notification:', chrome.runtime.lastError);
+    } else {
 
-        // Auto-close after 10 seconds (increased from 5 to ensure visibility)
-        setTimeout(() => {
-          chrome.notifications.clear('breakWarning');
-        }, 10000);
-      }
-    });
+      setTimeout(() => {
+        chrome.notifications.clear(id);
+      }, 10000);
+    }
   });
 }
 
 // Clear notification when clicked
 chrome.notifications.onClicked.addListener((notificationId) => {
-  chrome.notifications.clear(notificationId);
-  // Clean up stored notification data
-  if (state.blockNotifications && state.blockNotifications[notificationId]) {
-    delete state.blockNotifications[notificationId];
-    saveState();
-  }
+  initializeState().then(() => {
+    chrome.notifications.clear(notificationId);
+    // Clean up stored notification data
+    if (state.blockNotifications && state.blockNotifications[notificationId]) {
+      delete state.blockNotifications[notificationId];
+      saveState();
+    }
+  });
 });
 
 // Handle notification button clicks (for "Add to Whitelist" or "Add to Break Whitelist" button)
 chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) => {
 
-  if (buttonIndex === 0) { // Button clicked
-    // Get stored URL/domain for this notification
-    if (state.blockNotifications && state.blockNotifications[notificationId]) {
-      const notificationData = state.blockNotifications[notificationId];
-      const domainToWhitelist = notificationData.domain;
-      
-      if (domainToWhitelist) {
-        // Extract just the domain (remove www, protocol, etc.)
-        let cleanDomain = domainToWhitelist.toLowerCase().trim();
-        cleanDomain = cleanDomain.replace(/^https?:\/\//, '');
-        cleanDomain = cleanDomain.replace(/^www\./, '');
-        cleanDomain = cleanDomain.split('/')[0]; // Remove path
+  initializeState().then(() => {
+    if (buttonIndex === 0) { // Button clicked
+      // Get stored URL/domain for this notification
+      if (state.blockNotifications && state.blockNotifications[notificationId]) {
+        const notificationData = state.blockNotifications[notificationId];
+        const domainToWhitelist = notificationData.domain;
         
-        if (state.onBreak) {
-          // During break: add to break whitelist
-          if (!state.breakWhitelist.includes(cleanDomain)) {
-            state.breakWhitelist.push(cleanDomain);
-            saveState();
+        if (domainToWhitelist) {
+          // Extract just the domain (remove www, protocol, etc.)
+          let cleanDomain = domainToWhitelist.toLowerCase().trim();
+          cleanDomain = cleanDomain.replace(/^https?:\/\//, '');
+          cleanDomain = cleanDomain.replace(/^www\./, '');
+          cleanDomain = cleanDomain.split('/')[0]; // Remove path
+          
+          if (state.onBreak) {
+            // During break: add to break whitelist
+            if (!state.breakWhitelist.includes(cleanDomain)) {
+              state.breakWhitelist.push(cleanDomain);
+              saveState();
 
-            // Show confirmation notification
-            chrome.notifications.clear('breakWhitelistAdded', () => {
-              chrome.notifications.create('breakWhitelistAdded', {
-                type: 'basic',
-                iconUrl: chrome.runtime.getURL('assets/icons/icon128.png'),
-                title: '✅ Added to Break Whitelist',
-                message: `${cleanDomain} is now allowed during this break`,
-                priority: 1
-              }, (id) => {
-                // Auto-clear after 3 seconds
-                setTimeout(() => {
-                  chrome.notifications.clear(id);
-                }, 3000);
+              // Show confirmation notification
+              chrome.notifications.clear('breakWhitelistAdded', () => {
+                chrome.notifications.create('breakWhitelistAdded', {
+                  type: 'basic',
+                  iconUrl: chrome.runtime.getURL('assets/icons/icon128.png'),
+                  title: '✅ Added to Break Whitelist',
+                  message: `${cleanDomain} is now allowed during this break`,
+                  priority: 1
+                }, (id) => {
+                  // Auto-clear after 3 seconds
+                  setTimeout(() => {
+                    chrome.notifications.clear(id);
+                  }, 3000);
+                });
               });
-            });
+            } else {
+
+            }
           } else {
+            // Not on break: add to permanent whitelist
+            if (!state.whitelistedSites.includes(cleanDomain)) {
+              state.whitelistedSites.push(cleanDomain);
+              saveState();
 
-          }
-        } else {
-          // Not on break: add to permanent whitelist
-          if (!state.whitelistedSites.includes(cleanDomain)) {
-            state.whitelistedSites.push(cleanDomain);
-            saveState();
-
-            // Show confirmation notification
-            chrome.notifications.clear('whitelistAdded', () => {
-              chrome.notifications.create('whitelistAdded', {
-                type: 'basic',
-                iconUrl: chrome.runtime.getURL('assets/icons/icon128.png'),
-                title: '✅ Added to Whitelist',
-                message: `${cleanDomain} has been added to your whitelist`,
-                priority: 1
-              }, (id) => {
-                // Auto-clear after 3 seconds
-                setTimeout(() => {
-                  chrome.notifications.clear(id);
-                }, 3000);
+              // Show confirmation notification
+              chrome.notifications.clear('whitelistAdded', () => {
+                chrome.notifications.create('whitelistAdded', {
+                  type: 'basic',
+                  iconUrl: chrome.runtime.getURL('assets/icons/icon128.png'),
+                  title: '✅ Added to Whitelist',
+                  message: `${cleanDomain} has been added to your whitelist`,
+                  priority: 1
+                }, (id) => {
+                  // Auto-clear after 3 seconds
+                  setTimeout(() => {
+                    chrome.notifications.clear(id);
+                  }, 3000);
+                });
               });
-            });
-          } else {
+            } else {
 
+            }
           }
         }
+        
+        // Clean up stored notification data
+        delete state.blockNotifications[notificationId];
+        saveState();
       }
       
-      // Clean up stored notification data
-      delete state.blockNotifications[notificationId];
-      saveState();
+      // Clear the original notification
+      chrome.notifications.clear(notificationId);
     }
-    
-    // Clear the original notification
-    chrome.notifications.clear(notificationId);
-  }
+  });
 });
 
 // Handle messages
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
-  if (request.action === 'getState') {
-    sendResponse({ state, isFirstBreak: !state.hasSetGoalsToday });
-    return true; // Indicate we will send a response
-
-  } else if (request.action === 'startBreak') {
+  initializeState().then(async () => {
+    if (request.action === 'getState') {
+      sendResponse({ state, isFirstBreak: !state.hasSetGoalsToday });
+      return;
+  
+    } else if (request.action === 'startBreak') {
     const duration = request.duration || null;
     const unlockCategories = request.unlockCategories || [];
     const unlockAll = request.unlockAll || false;
-    // Legacy support
-    const legacyUnlockSite = request.unlockSite;
-    const legacyUnlockCategory = request.unlockCategory;
+    const sendReminders = request.sendReminders || false;
+    const reminderInterval = request.reminderInterval || 10;
     
-    // If legacy params are used, convert to new format if needed
-    if (!unlockAll && unlockCategories.length === 0) {
-      if (legacyUnlockSite) {
-        // Handle legacy "one site" logic by adding it directly to whitelist later? 
-        // Or just let startBreak handle legacy params if I kept them in signature?
-        // I removed them from signature. So I need to adapt here.
-        // Actually, I can just rely on startBreak's logic if I pass them differently or update startBreak to handle legacy.
-        // But I updated startBreak to NOT handle legacy params.
-        // So I must convert here.
-        // If unlockSite is present, we can't easily map it to a category. 
-        // But we can manually set breakWhitelist after startBreak.
-        // Or... 
-        // Let's just focus on new format. The popup sends new format.
-        // If legacy code calls this, it might break. But we updated popup.js.
-      }
-    }
-    
-    startBreak(duration, unlockCategories, unlockAll).then(() => {
+    startBreak(duration, unlockCategories, unlockAll, sendReminders, reminderInterval).then(() => {
       sendResponse({ success: true });
     });
     return true;
@@ -1071,6 +1181,32 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ success: true, completed: goal.completed });
     }
 
+  } else if (request.action === 'moveGoalUp') {
+    const index = state.dailyGoals.findIndex(g => g.id === request.goalId);
+    if (index > 0) {
+      // Swap with the previous element
+      const temp = state.dailyGoals[index];
+      state.dailyGoals[index] = state.dailyGoals[index - 1];
+      state.dailyGoals[index - 1] = temp;
+      saveState();
+      sendResponse({ success: true });
+    } else {
+      sendResponse({ success: false, error: 'Cannot move up' });
+    }
+
+  } else if (request.action === 'moveGoalDown') {
+    const index = state.dailyGoals.findIndex(g => g.id === request.goalId);
+    if (index >= 0 && index < state.dailyGoals.length - 1) {
+      // Swap with the next element
+      const temp = state.dailyGoals[index];
+      state.dailyGoals[index] = state.dailyGoals[index + 1];
+      state.dailyGoals[index + 1] = temp;
+      saveState();
+      sendResponse({ success: true });
+    } else {
+      sendResponse({ success: false, error: 'Cannot move down' });
+    }
+
   } else if (request.action === 'removeGoal') {
     const goal = state.dailyGoals.find(g => g.id === request.goalId);
     if (goal) {
@@ -1120,20 +1256,26 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
   } else if (request.action === 'removeBlockedSite') {
-    if (request.index >= 0 && request.index < state.blockedSites.length) {
-      const removed = state.blockedSites.splice(request.index, 1);
+    const domainToRemove = normalizeDomain(request.domain);
+    const index = state.blockedSites.findIndex(site => normalizeDomain(site) === domainToRemove);
+    if (index >= 0) {
+      const removed = state.blockedSites.splice(index, 1);
       const removedDomain = removed[0];
       
       // Remove from category map
       if (state.siteCategories && state.siteCategories[removedDomain]) {
         delete state.siteCategories[removedDomain];
       }
+      // Also remove if stored under normalized domain
+      if (state.siteCategories && state.siteCategories[domainToRemove]) {
+        delete state.siteCategories[domainToRemove];
+      }
       
       saveState();
 
       sendResponse({ success: true });
     } else {
-      sendResponse({ success: false, error: 'Invalid index' });
+      sendResponse({ success: false, error: 'Site not found' });
     }
 
   } else if (request.action === 'updateSiteCategory') {
@@ -1253,7 +1395,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // Update synchronous settings first
     state.breakDuration = request.breakDuration;
     state.cooldownDuration = request.cooldownDuration;
-    state.breakWarningTime = 2; // Fixed at 2 minutes
+    state.breakWarningTime = request.breakWarningTime !== undefined ? request.breakWarningTime : 2;
+    state.periodicReminderEnabled = request.periodicReminderEnabled !== undefined ? request.periodicReminderEnabled : true;
+    state.periodicReminderInterval = request.periodicReminderInterval !== undefined ? request.periodicReminderInterval : 10;
     if (request.challengeType) {
       state.challengeType = request.challengeType;
     }
@@ -1743,8 +1887,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ success: true, count: removedCount });
     }
   }
-  
-  return true;
+  });
   
   return true;
 });
@@ -1752,17 +1895,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 // Track recently blocked URLs to prevent duplicate checks
 const recentlyBlocked = new Map(); // tabId -> {url, timestamp}
 
-// Flag to track if state has been loaded from storage
-let stateLoaded = false;
-
 // Function to check and block URLs
-function checkAndBlockUrl(url, tabId, source) {
+async function checkAndBlockUrl(url, tabId, source) {
   // CRITICAL: Don't check URLs until state is loaded from storage
   // This prevents race condition where default state (onBreak: false) is used
-  if (!stateLoaded) {
-
-    return;
-  }
+  await initializeState();
   
   const urlLower = url.toLowerCase();
   
@@ -1903,7 +2040,9 @@ function checkAndBlockUrl(url, tabId, source) {
     }
     
 
-    chrome.tabs.update(tabId, { url: redirectTarget });
+    chrome.tabs.update(tabId, { url: redirectTarget }).catch((err) => {
+      console.warn(`⚠️ Failed to redirect tab ${tabId} (it may have been closed):`, err.message);
+    });
     
     // Show notification with blocked URL and whitelist option
     showBlockNotification(url, blockedDomain);

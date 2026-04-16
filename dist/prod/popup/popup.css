@@ -637,7 +637,7 @@ input[type="number"]:focus {
 
 /* Lists */
 .items-list {
-  max-height: 200px;
+  max-height: 350px;
   overflow-y: auto;
   background: #fff;
   border: 2px solid #000;
@@ -783,6 +783,29 @@ input[type="number"]:focus {
 
 .whitelist-group .site-text {
   font-weight: 900;
+}
+
+.goal-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.btn-move {
+  padding: 3px 6px;
+  background: linear-gradient(to bottom, #f0f0f0, #cccccc);
+  color: #333;
+  border: 2px outset #ffffff;
+  font-size: 10px;
+  cursor: pointer;
+  font-weight: 900;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+}
+
+.btn-move:hover {
+  background: linear-gradient(to bottom, #e0e0e0, #bbbbbb);
+  border-style: inset;
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 rgba(0,0,0,0.3);
 }
 
 .btn-remove {

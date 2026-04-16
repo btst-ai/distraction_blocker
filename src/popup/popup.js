@@ -290,7 +290,7 @@ function updateBreakButton() {
     // Update button text based on cooldown status
     if (inCooldown) {
       const cooldownMinutes = Math.ceil((currentState.cooldownEndTime - Date.now()) / 60000);
-      takeBreakBtn.textContent = `⏳ Next break in ${cooldownMinutes} minute${cooldownMinutes !== 1 ? 's' : ''}`;
+      takeBreakBtn.textContent = `🍅 Next break in ${cooldownMinutes} minute${cooldownMinutes !== 1 ? 's' : ''}`;
     } else {
       takeBreakBtn.textContent = '☕ Take a Break';
     }
@@ -366,12 +366,27 @@ function updatePreviousGoals() {
 function updateGoalsList() {
   console.log('📋 Updating goals list');
   const goalsList = document.getElementById('goalsList');
-  
+  const todayGoalsHeader = document.getElementById('todayGoalsHeader');
+
   if (!goalsList) {
     console.error('❌ goalsList element not found!');
     return;
   }
   
+  // Update header with yesterday's completed goals count if available
+  if (todayGoalsHeader) {
+    let completedYesterday = 0;
+    if (currentState.previousDayGoals && currentState.previousDayGoals.length > 0) {
+      completedYesterday = currentState.previousDayGoals.filter(g => g.completed).length;
+    }
+    
+    if (completedYesterday > 0) {
+      todayGoalsHeader.innerHTML = `🎯 Today's Goals <span style="font-size:0.8em; font-weight:normal;">(${completedYesterday} achieved yesterday)</span>`;
+    } else {
+      todayGoalsHeader.innerHTML = `🎯 Today's Goals`;
+    }
+  }
+
   if (!currentState.dailyGoals || currentState.dailyGoals.length === 0) {
     console.log('ℹ️ No goals to display');
     goalsList.innerHTML = '<div class="empty-state">No goals set yet. Add your first goal!</div>';
@@ -379,10 +394,25 @@ function updateGoalsList() {
   }
   
   console.log('✅ Displaying', currentState.dailyGoals.length, 'goals');
-  goalsList.innerHTML = currentState.dailyGoals.map(goal => `
+  
+  // Sort goals: completed at top, then by original order (or we can use index to preserve order for non-completed)
+  // Wait, the user asked: "completed goal shown at the top of the list" and "sort goals by prio, with up/down triangle buttons"
+  const sortedGoals = [...currentState.dailyGoals].map((goal, index) => ({...goal, originalIndex: index}));
+  sortedGoals.sort((a, b) => {
+    if (a.completed !== b.completed) {
+      return a.completed ? -1 : 1; // Completed first
+    }
+    return a.originalIndex - b.originalIndex; // Preserve order for same completion status
+  });
+  
+  goalsList.innerHTML = sortedGoals.map(goal => `
     <div class="item goal-item ${goal.completed ? 'completed' : ''}">
       <span class="goal-text" data-goal-id="${goal.id}">${goal.completed ? '✅' : '⬜'} ${escapeHtml(goal.text)}</span>
-      <button class="btn-remove" data-remove-goal-id="${goal.id}">✕</button>
+      <div class="goal-actions">
+        <button class="btn-move btn-move-up" data-move-up-id="${goal.id}">▲</button>
+        <button class="btn-move btn-move-down" data-move-down-id="${goal.id}">▼</button>
+        <button class="btn-remove" data-remove-goal-id="${goal.id}">✕</button>
+      </div>
     </div>
   `).join('');
   
@@ -394,6 +424,30 @@ function updateGoalsList() {
       const goalId = parseInt(span.dataset.goalId);
       if (!isNaN(goalId)) {
       toggleGoal(goalId);
+      }
+    });
+  });
+  
+  // Add click handlers for moving up
+  document.querySelectorAll('[data-move-up-id]').forEach(btn => {
+    if (!btn || !btn.dataset) return;
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const goalId = parseInt(btn.dataset.moveUpId);
+      if (!isNaN(goalId)) {
+        moveGoalUp(goalId);
+      }
+    });
+  });
+
+  // Add click handlers for moving down
+  document.querySelectorAll('[data-move-down-id]').forEach(btn => {
+    if (!btn || !btn.dataset) return;
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const goalId = parseInt(btn.dataset.moveDownId);
+      if (!isNaN(goalId)) {
+        moveGoalDown(goalId);
       }
     });
   });
@@ -849,14 +903,7 @@ function updateSitesList() {
       if (!btn || !btn.dataset) return;
       const site = btn.dataset.site;
       if (!site) return;
-      // Find all indices that normalize to this site
-      const indices = currentState.blockedSites
-        .map((s, idx) => normalizeDomain(s) === site ? idx : -1)
-        .filter(idx => idx >= 0);
-      // Remove all occurrences
-      for (let i = indices.length - 1; i >= 0; i--) {
-        await removeSite(indices[i]);
-      }
+      await removeSite(site);
     });
   });
 }
@@ -994,6 +1041,9 @@ function updateWhitelistList() {
 function updateSettings() {
   const breakDurationInput = document.getElementById('breakDuration');
   const cooldownDurationInput = document.getElementById('cooldownDuration');
+  const breakWarningTimeInput = document.getElementById('breakWarningTime');
+  const settingPeriodicReminderEnabled = document.getElementById('settingPeriodicReminderEnabled');
+  const settingPeriodicReminderInterval = document.getElementById('settingPeriodicReminderInterval');
   const challengeTypeSelect = document.getElementById('challengeType');
   const vocabLanguageSelect = document.getElementById('vocabLanguage');
   const vocabLanguageRow = document.getElementById('vocabLanguageRow');
@@ -1012,6 +1062,15 @@ function updateSettings() {
   }
   if (document.activeElement !== cooldownDurationInput) {
     cooldownDurationInput.value = currentState.cooldownDuration;
+  }
+  if (breakWarningTimeInput && document.activeElement !== breakWarningTimeInput) {
+    breakWarningTimeInput.value = currentState.breakWarningTime || 2;
+  }
+  if (settingPeriodicReminderEnabled && document.activeElement !== settingPeriodicReminderEnabled) {
+    settingPeriodicReminderEnabled.checked = currentState.periodicReminderEnabled !== false; // Default true
+  }
+  if (settingPeriodicReminderInterval && document.activeElement !== settingPeriodicReminderInterval) {
+    settingPeriodicReminderInterval.value = currentState.periodicReminderInterval || 10; // Default 10
   }
   if (document.activeElement !== challengeTypeSelect) {
     challengeTypeSelect.value = currentState.challengeType || 'vocabulary';
@@ -1443,6 +1502,12 @@ async function confirmDuration() {
   const allCheckboxes = document.querySelectorAll('.break-category-checkbox');
   const isAllSelected = checkboxes.length > 0 && checkboxes.length === allCheckboxes.length;
   
+  // Get reminder settings
+  const periodicReminderCheckbox = document.getElementById('periodicReminderCheckbox');
+  const periodicReminderInterval = document.getElementById('periodicReminderInterval');
+  const sendReminders = periodicReminderCheckbox ? periodicReminderCheckbox.checked : false;
+  const reminderInterval = periodicReminderInterval ? parseInt(periodicReminderInterval.value) : 10;
+  
   // Hide duration confirmation, start the break
   const breakDurationConfirm = document.getElementById('breakDurationConfirm');
   if (breakDurationConfirm) breakDurationConfirm.style.display = 'none';
@@ -1453,7 +1518,9 @@ async function confirmDuration() {
       action: 'startBreak',
       duration: duration,
       unlockCategories: selectedCategories, // List of categories to unlock
-      unlockAll: isAllSelected // Flag for all allowed
+      unlockAll: isAllSelected, // Flag for all allowed
+      sendReminders: sendReminders,
+      reminderInterval: reminderInterval
     });
   
     if (response && response.success) {
@@ -2232,6 +2299,36 @@ async function addGoal() {
   }
 }
 
+// Move goal priority up
+async function moveGoalUp(goalId) {
+  try {
+    const response = await chrome.runtime.sendMessage({ 
+      action: 'moveGoalUp', 
+      goalId 
+    });
+    if (response && response.success) {
+      await loadState();
+    }
+  } catch (error) {
+    console.error('❌ Error moving goal up:', error);
+  }
+}
+
+// Move goal priority down
+async function moveGoalDown(goalId) {
+  try {
+    const response = await chrome.runtime.sendMessage({ 
+      action: 'moveGoalDown', 
+      goalId 
+    });
+    if (response && response.success) {
+      await loadState();
+    }
+  } catch (error) {
+    console.error('❌ Error moving goal down:', error);
+  }
+}
+
 // Toggle goal completion
 async function toggleGoal(goalId) {
   try {
@@ -2349,11 +2446,11 @@ async function addSite() {
 }
 
 // Remove site
-async function removeSite(index) {
+async function removeSite(domain) {
   try {
   const response = await chrome.runtime.sendMessage({ 
     action: 'removeBlockedSite', 
-    index 
+    domain 
   });
   
     if (response && response.success) {
@@ -2638,6 +2735,9 @@ async function cancelRemoveNoGoListSite(domain) {
 async function saveSettings() {
   const breakDurationEl = document.getElementById('breakDuration');
   const cooldownDurationEl = document.getElementById('cooldownDuration');
+  const breakWarningTimeEl = document.getElementById('breakWarningTime');
+  const periodicReminderEnabledEl = document.getElementById('settingPeriodicReminderEnabled');
+  const periodicReminderIntervalEl = document.getElementById('settingPeriodicReminderInterval');
   const challengeTypeEl = document.getElementById('challengeType');
   
   if (!breakDurationEl || !cooldownDurationEl || !challengeTypeEl) {
@@ -2647,15 +2747,18 @@ async function saveSettings() {
   
   const breakDuration = parseInt(breakDurationEl.value, 10);
   const cooldownDuration = parseInt(cooldownDurationEl.value, 10);
+  const breakWarningTime = breakWarningTimeEl ? parseInt(breakWarningTimeEl.value, 10) : 2;
+  const periodicReminderEnabled = periodicReminderEnabledEl ? periodicReminderEnabledEl.checked : true;
+  const periodicReminderInterval = periodicReminderIntervalEl ? parseInt(periodicReminderIntervalEl.value, 10) : 10;
   const challengeType = challengeTypeEl.value;
   
   // Validate parsed values
-  if (isNaN(breakDuration) || isNaN(cooldownDuration)) {
+  if (isNaN(breakDuration) || isNaN(cooldownDuration) || isNaN(breakWarningTime)) {
     alert('Please enter valid numbers for durations');
     return;
   }
   
-  if (breakDuration < 1 || cooldownDuration < 1) {
+  if (breakDuration < 1 || cooldownDuration < 1 || breakWarningTime < 1) {
     alert('Durations must be at least 1 minute');
     return;
   }
@@ -2690,6 +2793,9 @@ async function saveSettings() {
       action: 'updateSettings',
       breakDuration,
       cooldownDuration,
+      breakWarningTime,
+      periodicReminderEnabled,
+      periodicReminderInterval,
       challengeType,
       vocabLanguage,
       redirectType
@@ -2720,6 +2826,9 @@ async function saveSettings() {
       action: 'updateSettings', 
       breakDuration,
       cooldownDuration,
+      breakWarningTime,
+      periodicReminderEnabled,
+      periodicReminderInterval,
       challengeType,
       vocabLanguage,
       redirectType
@@ -2870,6 +2979,12 @@ function showDurationConfirmation() {
   if (breakDurationConfirm) breakDurationConfirm.style.display = 'block';
   const breakDurationSelector = document.getElementById('breakDurationSelector');
   if (breakDurationSelector) breakDurationSelector.value = currentState.breakDuration;
+  
+  const periodicReminderCheckbox = document.getElementById('periodicReminderCheckbox');
+  if (periodicReminderCheckbox) periodicReminderCheckbox.checked = currentState.periodicReminderEnabled !== false; // Default true
+  
+  const periodicReminderInterval = document.getElementById('periodicReminderInterval');
+  if (periodicReminderInterval) periodicReminderInterval.value = currentState.periodicReminderInterval || 10; // Default 10
   
   // Initialize category list
   updateBreakCategoryList();
@@ -3451,6 +3566,22 @@ if (selectAllCategoriesBtn) {
   });
 }
 
+// Helper: Update confirm button state based on selected categories
+function updateConfirmButtonState() {
+  const confirmBtn = document.getElementById('confirmDurationBtn');
+  if (!confirmBtn) return;
+  
+  const anyChecked = document.querySelector('.break-category-checkbox:checked') !== null;
+  
+  if (anyChecked) {
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = 'Start Break';
+  } else {
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Select Category';
+  }
+}
+
 // Helper: Update break category list (checkboxes)
 function updateBreakCategoryList() {
   const container = document.getElementById('breakCategoryList');
@@ -3492,6 +3623,11 @@ function updateBreakCategoryList() {
       <input type="checkbox" value="${escapeHtml(cat)}" class="break-category-checkbox" />
       <span>${escapeHtml(cat)} (${count} sites)</span>
     `;
+    
+    // Add change event listener for smart button
+    const checkbox = label.querySelector('input');
+    checkbox.addEventListener('change', updateConfirmButtonState);
+    
     container.appendChild(label);
   });
   
@@ -3500,6 +3636,9 @@ function updateBreakCategoryList() {
   if (btn) {
     btn.textContent = 'Select All Categories';
   }
+  
+  // Initialize button state
+  updateConfirmButtonState();
 }
 
 // Helper: Toggle select all categories
@@ -3522,6 +3661,9 @@ function toggleSelectAllCategories() {
   if (btn) {
     btn.textContent = newState ? 'Unselect All Categories' : 'Select All Categories';
   }
+  
+  // Update start break button state
+  updateConfirmButtonState();
 }
 
 const addCategoryToBreakWhitelist = document.getElementById('addCategoryToBreakWhitelist');
@@ -3837,6 +3979,36 @@ if (cooldownDurationEl) {
       await saveSettings();
     } catch (error) {
       console.error('❌ Error saving settings:', error);
+    }
+  });
+}
+const breakWarningTimeEl = document.getElementById('breakWarningTime');
+if (breakWarningTimeEl) {
+  breakWarningTimeEl.addEventListener('change', async () => {
+    try {
+      await saveSettings();
+    } catch (error) {
+      console.error('❌ Error saving break warning time:', error);
+    }
+  });
+}
+const settingPeriodicReminderEnabledEl = document.getElementById('settingPeriodicReminderEnabled');
+if (settingPeriodicReminderEnabledEl) {
+  settingPeriodicReminderEnabledEl.addEventListener('change', async () => {
+    try {
+      await saveSettings();
+    } catch (error) {
+      console.error('❌ Error saving periodic reminder enabled:', error);
+    }
+  });
+}
+const settingPeriodicReminderIntervalEl = document.getElementById('settingPeriodicReminderInterval');
+if (settingPeriodicReminderIntervalEl) {
+  settingPeriodicReminderIntervalEl.addEventListener('change', async () => {
+    try {
+      await saveSettings();
+    } catch (error) {
+      console.error('❌ Error saving periodic reminder interval:', error);
     }
   });
 }
