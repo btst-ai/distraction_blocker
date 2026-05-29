@@ -5,7 +5,7 @@
 Gōrudo is a **Manifest V3 Chrome extension** that blocks distracting websites and wraps that enforcement in a full **goal-setting, daily timeline, break management, and vocabulary-learning system**. Every break is a conscious choice, backed by a light friction challenge. All data stays local — no accounts, no servers, no tracking.
 
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Gorudo-blue?logo=googlechrome)](https://chromewebstore.google.com/detail/gorudo/nhccoddpkgalplfmondeiodekcoecafo)
-![Version](https://img.shields.io/badge/version-1.1-green)
+![Version](https://img.shields.io/badge/version-1.3-green)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-orange)
 
 ---
@@ -91,7 +91,7 @@ Settings      ← Break/cooldown durations, challenge type, language, redirect
 | Break Duration | 5 min | How long each break lasts |
 | Time Between Breaks | 25 min | Cooldown enforced after each break |
 | Warning Before Break Ends | 2 min | Notification N minutes before break ends |
-| Periodic Reminders | Enabled, 10 min | Notify at an interval while on break |
+| Periodic Reminders | 10 min | Notify at an interval while on break (toggle available on the break start screen) |
 | Validation Step | Vocabulary | Challenge type: Vocabulary / Maths / Other |
 | Language | 🇫🇷 French | Vocabulary language pair |
 | Redirect Blocked Sites | GIF | Redirect target: random GIF or Amnesty donation |
@@ -191,6 +191,21 @@ Gōrudo is not about punishment or hard restrictions. It's about three things:
 3. **Progress tracking** — see your daily timeline, celebrate completions, carry your wins into tomorrow
 
 **Start your path. 🥷 Protect your goals 🧘**
+
+---
+
+## 📋 Changelog
+
+### v1.3
+- **Settings cleanup**: removed the periodic reminder enable/disable checkbox from the Settings panel — the toggle now lives exclusively on the break start screen, where it's actually relevant
+- **Yesterday's goal count**: the Today's Goals header now shows how many goals you completed the previous day (e.g. *"3 achieved yesterday"*) to carry momentum forward
+- **Icon fix**: prod build was incorrectly using the green dev icon for the 48px and 128px toolbar sizes; restored the correct red prod icons across all sizes
+
+### v1.2
+- Goals section rework, break notifications, periodic reminders, bug fixes & config refactor
+
+### v1.1
+- Initial public release
 
 ---
 
