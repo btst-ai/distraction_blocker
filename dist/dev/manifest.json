@@ -21,15 +21,15 @@
     "default_popup": "popup/popup.html",
     "default_icon": {
       "16": "assets/icons/icon16.png",
-      "48": "assets/icons/icon48.png",
-      "128": "assets/icons/icon128.png"
+      "48": "assets/icons/gorudo_48_dev.png",
+      "128": "assets/icons/gorudo_128_dev.png"
     },
     "default_title": "Gorudo Dev"
   },
   "icons": {
     "16": "assets/icons/icon16.png",
-    "48": "assets/icons/icon48.png",
-    "128": "assets/icons/icon128.png"
+    "48": "assets/icons/gorudo_48_dev.png",
+    "128": "assets/icons/gorudo_128_dev.png"
   },
   "web_accessible_resources": [
     {

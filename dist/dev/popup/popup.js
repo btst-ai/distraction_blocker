@@ -1066,9 +1066,7 @@ function updateSettings() {
   if (breakWarningTimeInput && document.activeElement !== breakWarningTimeInput) {
     breakWarningTimeInput.value = currentState.breakWarningTime || 2;
   }
-  if (settingPeriodicReminderEnabled && document.activeElement !== settingPeriodicReminderEnabled) {
-    settingPeriodicReminderEnabled.checked = currentState.periodicReminderEnabled !== false; // Default true
-  }
+
   if (settingPeriodicReminderInterval && document.activeElement !== settingPeriodicReminderInterval) {
     settingPeriodicReminderInterval.value = currentState.periodicReminderInterval || 10; // Default 10
   }
@@ -2748,7 +2746,7 @@ async function saveSettings() {
   const breakDuration = parseInt(breakDurationEl.value, 10);
   const cooldownDuration = parseInt(cooldownDurationEl.value, 10);
   const breakWarningTime = breakWarningTimeEl ? parseInt(breakWarningTimeEl.value, 10) : 2;
-  const periodicReminderEnabled = periodicReminderEnabledEl ? periodicReminderEnabledEl.checked : true;
+  const periodicReminderEnabled = true;
   const periodicReminderInterval = periodicReminderIntervalEl ? parseInt(periodicReminderIntervalEl.value, 10) : 10;
   const challengeType = challengeTypeEl.value;
   
@@ -3992,16 +3990,7 @@ if (breakWarningTimeEl) {
     }
   });
 }
-const settingPeriodicReminderEnabledEl = document.getElementById('settingPeriodicReminderEnabled');
-if (settingPeriodicReminderEnabledEl) {
-  settingPeriodicReminderEnabledEl.addEventListener('change', async () => {
-    try {
-      await saveSettings();
-    } catch (error) {
-      console.error('❌ Error saving periodic reminder enabled:', error);
-    }
-  });
-}
+
 const settingPeriodicReminderIntervalEl = document.getElementById('settingPeriodicReminderInterval');
 if (settingPeriodicReminderIntervalEl) {
   settingPeriodicReminderIntervalEl.addEventListener('change', async () => {
