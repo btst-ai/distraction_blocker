@@ -21,7 +21,7 @@ let removedVocabWords = new Map(); // index -> {word, translation, originalWord,
 // Load and display state
 async function loadState() {
   try {
-    console.log('[LANG-DEBUG] Step 6: loadState() called');
+
     // Check for runtime errors first
     if (chrome.runtime.lastError) {
       console.error('[LANG-DEBUG] ❌ Chrome runtime error before getState:', chrome.runtime.lastError);
@@ -33,10 +33,9 @@ async function loadState() {
       return;
     }
     
-    console.log('[LANG-DEBUG] Step 6.1: Sending getState message...');
+
     const response = await chrome.runtime.sendMessage({ action: 'getState' });
-    console.log('[LANG-DEBUG] Step 6.2: Received getState response');
-    
+
     // Check for runtime errors after message
     if (chrome.runtime.lastError) {
       console.error('[LANG-DEBUG] ❌ Chrome runtime error after getState:', chrome.runtime.lastError);
@@ -66,14 +65,14 @@ async function loadState() {
       }
       return;
     }
-    console.log('[LANG-DEBUG] Step 6.3: State received. vocabLanguage:', response.state.vocabLanguage);
-    console.log('[LANG-DEBUG] Step 6.4: Vocabulary count in state:', response.state.vocabulary?.length || 0);
+
+
     currentState = response.state;
-    console.log('[LANG-DEBUG] Step 6.5: State assigned to currentState');
-    console.log('✅ State loaded successfully');
-    console.log('[LANG-DEBUG] Step 6.6: Calling updateUI()...');
+
+
+
     updateUI();
-    console.log('[LANG-DEBUG] Step 6.7: updateUI() completed');
+
     // Site selector will be updated by updateUI -> updateBreakSiteSelector
   } catch (err) {
     console.error('[LANG-DEBUG] ❌ ERROR in loadState:', err);
@@ -88,12 +87,11 @@ async function loadState() {
 // Update all UI elements
 function updateUI() {
   if (!currentState) {
-    console.log('⚠️ updateUI called but currentState is null');
+
     return;
   }
   
-  console.log('🔄 Updating UI with state:', currentState);
-  
+
   try {
     updateStatus();
     updateBreakButton();
@@ -364,7 +362,7 @@ function updatePreviousGoals() {
 
 // Update goals list
 function updateGoalsList() {
-  console.log('📋 Updating goals list');
+
   const goalsList = document.getElementById('goalsList');
   const todayGoalsHeader = document.getElementById('todayGoalsHeader');
 
@@ -388,13 +386,12 @@ function updateGoalsList() {
   }
 
   if (!currentState.dailyGoals || currentState.dailyGoals.length === 0) {
-    console.log('ℹ️ No goals to display');
+
     goalsList.innerHTML = '<div class="empty-state">No goals set yet. Add your first goal!</div>';
     return;
   }
   
-  console.log('✅ Displaying', currentState.dailyGoals.length, 'goals');
-  
+
   // Sort goals: completed at top, then by original order (or we can use index to preserve order for non-completed)
   // Wait, the user asked: "completed goal shown at the top of the list" and "sort goals by prio, with up/down triangle buttons"
   const sortedGoals = [...currentState.dailyGoals].map((goal, index) => ({...goal, originalIndex: index}));
@@ -468,7 +465,7 @@ function updateGoalsList() {
 
 // Update timeline
 function updateTimeline() {
-  console.log('📅 Updating timeline');
+
   const timeline = document.getElementById('timeline');
   
   if (!timeline) {
@@ -477,7 +474,7 @@ function updateTimeline() {
   }
   
   if (!currentState.todayTimeline || currentState.todayTimeline.length === 0) {
-    console.log('ℹ️ No timeline events to display');
+
     timeline.innerHTML = '<div class="timeline-empty">No activity yet today</div>';
     return;
   }
@@ -515,8 +512,7 @@ function updateTimeline() {
     }
   }
   
-  console.log('✅ Displaying', currentState.todayTimeline.length, 'timeline events');
-  
+
   // Sort by timestamp (oldest first)
   const sorted = [...currentState.todayTimeline].sort((a, b) => a.timestamp - b.timestamp);
   
@@ -713,7 +709,7 @@ function updateBreakWhitelistControls(force = false) {
 
 // Update block statistics
 function updateBlockStats() {
-  console.log('📊 Updating block stats');
+
   const totalBlocksEl = document.getElementById('totalBlocksCount');
   const topBlockedListEl = document.getElementById('topBlockedList');
   
@@ -761,7 +757,7 @@ let lastSitesListState = null;
 
 // Update sites list
 function updateSitesList() {
-  console.log('🚫 Updating blocked sites list');
+
   const sitesList = document.getElementById('sitesList');
   
   if (!sitesList) {
@@ -787,7 +783,7 @@ function updateSitesList() {
   lastSitesListState = newStateSignature;
   
   if (!currentState.blockedSites || currentState.blockedSites.length === 0) {
-    console.log('ℹ️ No blocked sites to display');
+
     sitesList.innerHTML = '<div class="empty-state">No sites blocked</div>';
     return;
   }
@@ -797,8 +793,7 @@ function updateSitesList() {
     .map(site => normalizeDomain(site))
     .filter((site, idx, arr) => arr.indexOf(site) === idx); // Remove duplicates
   
-  console.log('✅ Displaying', normalizedSites.length, 'blocked sites');
-  
+
   // Group by category
   const categories = {};
   const siteCategories = currentState.siteCategories || {};
@@ -861,8 +856,7 @@ function updateSitesList() {
       const site = e.target.dataset.site;
       let newCategory = e.target.value;
       
-      console.log(`🔄 Attempting to change category for ${site} to ${newCategory}`);
-      
+
       if (newCategory === 'CREATE_NEW_CATEGORY') {
         const customCategory = prompt('Enter new category name:');
         if (customCategory && customCategory.trim()) {
@@ -882,8 +876,7 @@ function updateSitesList() {
             category: newCategory
           });
           
-          console.log('📨 Response from updateSiteCategory:', response);
-          
+
           if (response && response.success) {
             await loadState();
           } else {
@@ -910,7 +903,7 @@ function updateSitesList() {
 
 // Update whitelist list
 function updateWhitelistList() {
-  console.log('✅ Updating whitelist');
+
   const whitelistList = document.getElementById('whitelistList');
   
   if (!whitelistList) {
@@ -919,13 +912,12 @@ function updateWhitelistList() {
   }
   
   if (!currentState.whitelistedSites || currentState.whitelistedSites.length === 0) {
-    console.log('ℹ️ No whitelisted sites to display');
+
     whitelistList.innerHTML = '<div class="empty-state">No whitelisted sites</div>';
     return;
   }
   
-  console.log('✅ Displaying', currentState.whitelistedSites.length, 'whitelisted sites');
-  
+
   // Group domains by base (e.g., "accounts.google")
   const grouped = {};
   const standalone = [];
@@ -2538,7 +2530,7 @@ async function removeWhitelistedSiteGroup(indices) {
 
 // Update nogo list
 function updateNoGoList() {
-  console.log('🔥 Updating nogo list');
+
   const nogoListList = document.getElementById('nogoListList');
   
   if (!nogoListList) {
@@ -2547,13 +2539,12 @@ function updateNoGoList() {
   }
   
   if (!currentState.nogoList || currentState.nogoList.length === 0) {
-    console.log('ℹ️ No nogo list sites to display');
+
     nogoListList.innerHTML = '<div class="empty-state">No sites in nogo list</div>';
     return;
   }
   
-  console.log('✅ Displaying', currentState.nogoList.length, 'nogo list sites');
-  
+
   // Normalize and deduplicate
   const normalizedSites = currentState.nogoList
     .map(site => normalizeDomain(site))
@@ -2763,19 +2754,19 @@ async function saveSettings() {
   
   // Only get vocabLanguage if challenge type is vocabulary
   let vocabLanguage = currentState?.vocabLanguage || 'en_fr';
-  console.log('[LANG-DEBUG] Step 2.1: Initial vocabLanguage from state:', vocabLanguage);
-  console.log('[LANG-DEBUG] Step 2.2: Challenge type:', challengeType);
+
+
   if (challengeType === 'vocabulary') {
     const vocabLanguageEl = document.getElementById('vocabLanguage');
-    console.log('[LANG-DEBUG] Step 2.3: vocabLanguageEl found:', !!vocabLanguageEl);
+
     if (vocabLanguageEl && vocabLanguageEl.value) {
       vocabLanguage = vocabLanguageEl.value;
-      console.log('[LANG-DEBUG] Step 2.4: Updated vocabLanguage from dropdown:', vocabLanguage);
+
     } else {
-      console.log('[LANG-DEBUG] Step 2.4: vocabLanguageEl missing or empty, keeping:', vocabLanguage);
+
     }
   } else {
-    console.log('[LANG-DEBUG] Step 2.3: Challenge type is not vocabulary, keeping state value:', vocabLanguage);
+
   }
   
   // Get redirect type from radio buttons
@@ -2786,18 +2777,8 @@ async function saveSettings() {
   }
   
   try {
-    console.log('[LANG-DEBUG] Step 2.5: Sending updateSettings message with vocabLanguage:', vocabLanguage);
-    console.log('[LANG-DEBUG] Step 2.5.1: Message payload:', {
-      action: 'updateSettings',
-      breakDuration,
-      cooldownDuration,
-      breakWarningTime,
-      periodicReminderEnabled,
-      periodicReminderInterval,
-      challengeType,
-      vocabLanguage,
-      redirectType
-    });
+
+    
     
     // ERROR CHECK POINT 1: Before sending message
     if (chrome.runtime.lastError) {
@@ -2806,15 +2787,13 @@ async function saveSettings() {
       return;
     }
     
-    console.log('[LANG-DEBUG] Step 2.5.2: About to call chrome.runtime.sendMessage...');
-    console.log('[LANG-DEBUG] Step 2.5.2.1: chrome.runtime exists?', typeof chrome.runtime !== 'undefined');
-    console.log('[LANG-DEBUG] Step 2.5.2.2: chrome.runtime.sendMessage exists?', typeof chrome.runtime.sendMessage === 'function');
-    console.log('[LANG-DEBUG] Step 2.5.2.3: chrome.runtime.id:', chrome.runtime.id);
-    console.log('[LANG-DEBUG] Step 2.5.2.4: chrome.runtime.lastError before send:', chrome.runtime.lastError);
-    
+
+
+
+
+
     const sendMessageStartTime = Date.now();
-    console.log('[LANG-DEBUG] Step 2.5.2.5: Timestamp before sendMessage:', sendMessageStartTime);
-    
+
     // Create a promise wrapper to track the exact moment response is received
     let responseReceived = false;
     let responseValue = undefined;
@@ -2832,18 +2811,17 @@ async function saveSettings() {
       redirectType
     });
     
-    console.log('[LANG-DEBUG] Step 2.5.2.6: sendMessage promise created, type:', typeof messagePromise);
-    console.log('[LANG-DEBUG] Step 2.5.2.7: messagePromise is Promise?', messagePromise instanceof Promise);
-    
+
+
     // Add a then handler to track when response arrives
     messagePromise.then((res) => {
       responseReceived = true;
       responseValue = res;
       responseReceivedTime = Date.now();
-      console.log('[LANG-DEBUG] Step 2.5.2.8: Promise.then() callback fired!');
-      console.log('[LANG-DEBUG] Step 2.5.2.9: Response received in then():', res);
-      console.log('[LANG-DEBUG] Step 2.5.2.10: Response type in then():', typeof res);
-      console.log('[LANG-DEBUG] Step 2.5.2.11: Time to receive response:', responseReceivedTime - sendMessageStartTime, 'ms');
+
+
+
+
     }).catch((err) => {
       console.error('[LANG-DEBUG] Step 2.5.2.12: Promise.catch() fired with error:', err);
     });
@@ -2851,18 +2829,16 @@ async function saveSettings() {
     const response = await messagePromise;
     
     const sendMessageEndTime = Date.now();
-    console.log('[LANG-DEBUG] Step 2.5.3: sendMessage await completed in', sendMessageEndTime - sendMessageStartTime, 'ms');
-    console.log('[LANG-DEBUG] Step 2.5.3.1: responseReceived flag:', responseReceived);
-    console.log('[LANG-DEBUG] Step 2.5.3.2: responseValue from then():', responseValue);
-    console.log('[LANG-DEBUG] Step 2.5.3.3: response from await:', response);
-    console.log('[LANG-DEBUG] Step 2.5.3.4: Are they equal?', response === responseValue);
-    
-    console.log('[LANG-DEBUG] Step 2.6: Await completed. Response:', response);
-    console.log('[LANG-DEBUG] Step 2.6.1: Response type:', typeof response);
-    console.log('[LANG-DEBUG] Step 2.6.2: Response is null?', response === null);
-    console.log('[LANG-DEBUG] Step 2.6.3: Response is undefined?', response === undefined);
-    console.log('[LANG-DEBUG] Step 2.6.4: Response stringified:', JSON.stringify(response));
-    
+
+
+
+
+
+
+
+
+
+
     // ERROR CHECK POINT 2: After sendMessage, check for runtime errors
     const lastErrorAfter = chrome.runtime.lastError;
     if (lastErrorAfter) {
@@ -2871,8 +2847,7 @@ async function saveSettings() {
       alert('ERROR-002: Extension error after sending message: ' + lastErrorAfter.message);
       return;
     }
-    console.log('[LANG-DEBUG] Step 2.6.5: No chrome.runtime.lastError after sendMessage');
-    
+
     // ERROR CHECK POINT 3: Response is null
     if (response === null) {
       console.error('[ERROR-003] ❌ Response is explicitly null');
@@ -2934,14 +2909,12 @@ async function saveSettings() {
     }
     
     // SUCCESS PATH
-    console.log('[LANG-DEBUG] Step 2.7: Settings saved successfully, calling loadState()...');
-    console.log('[LANG-DEBUG] Step 2.7.1: Response validated successfully:', response);
-    
+
+
     // Settings auto-saved, no alert needed
     await loadState();
-    console.log('[LANG-DEBUG] Step 2.8: loadState() completed');
-    console.log('[LANG-DEBUG] ✅ SUCCESS: All settings saved and state reloaded');
-    
+
+
   } catch (error) {
     // ERROR CHECK POINT 10: Exception thrown during sendMessage or processing
     console.error('[ERROR-010] ❌ Exception caught in saveSettings:', error);
@@ -4023,17 +3996,16 @@ const vocabLanguageEl = document.getElementById('vocabLanguage');
 if (vocabLanguageEl) {
   vocabLanguageEl.addEventListener('change', async () => {
     try {
-      console.log('[LANG-DEBUG] Step 1: Language dropdown changed');
+
       const selectedLanguage = vocabLanguageEl.value;
-      console.log('[LANG-DEBUG] Step 1.1: Selected language:', selectedLanguage);
-      console.log('[LANG-DEBUG] Step 1.2: Current state vocabLanguage:', currentState?.vocabLanguage);
-      console.log('[LANG-DEBUG] Step 1.3: Challenge type:', document.getElementById('challengeType')?.value);
-      
+
+
+
       // saveSettings() already handles vocabulary reload via updateSettings
       // when vocabLanguage changes, so we just need to save and reload state
-      console.log('[LANG-DEBUG] Step 2: Calling saveSettings()...');
+
       await saveSettings();
-      console.log('[LANG-DEBUG] Step 3: saveSettings() completed successfully');
+
       // loadState() is already called in saveSettings() after successful save,
       // so we don't need to call it again here
     } catch (error) {
@@ -4109,8 +4081,7 @@ if (removeFromBreakWhitelistEl) {
     const domain = this.value;
     if (!domain) return;
     
-    console.log('🔄 Removing from break whitelist:', domain);
-    
+
     // Set flag to prevent updates during processing
     isProcessingBreakWhitelistChange = true;
     
@@ -4133,8 +4104,7 @@ if (removeFromBreakWhitelistEl) {
         return;
       }
       
-      console.log('📨 Response:', response);
-      
+
       if (response && response.success) {
         // Force update by invalidating cache and reloading state
         lastBreakWhitelistState = null;
@@ -4175,8 +4145,7 @@ if (addToBreakWhitelistEl) {
     const domain = this.value;
     if (!domain) return;
     
-    console.log('🔄 Adding to break whitelist:', domain);
-    
+
     // Set flag to prevent updates during processing
     isProcessingBreakWhitelistChange = true;
     
@@ -4199,8 +4168,7 @@ if (addToBreakWhitelistEl) {
         return;
       }
       
-      console.log('📨 Response:', response);
-      
+
       if (response && response.success) {
         // Force update by invalidating cache and reloading state
         lastBreakWhitelistState = null;

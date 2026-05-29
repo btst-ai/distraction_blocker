@@ -83,6 +83,15 @@ def build(env):
             manifest['name'] = 'Gorudo Dev'
             if 'action' in manifest and 'default_title' in manifest['action']:
                 manifest['action']['default_title'] = 'Gorudo Dev'
+            # Use green dev icons for the toolbar and extension management page
+            dev_icons = {
+                '16': 'assets/icons/icon16.png',
+                '48': 'assets/icons/gorudo_48_dev.png',
+                '128': 'assets/icons/gorudo_128_dev.png'
+            }
+            if 'action' in manifest:
+                manifest['action']['default_icon'] = dev_icons
+            manifest['icons'] = dev_icons
 
         with open(manifest_file, 'w', encoding='utf-8') as f:
             json.dump(manifest, f, indent=2)
