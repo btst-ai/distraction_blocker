@@ -68,9 +68,10 @@ You can also add your own words, bulk-import via CSV, and create fully custom di
 ```
 Header        ← Status, active break controls, snooze buttons
 ──────────────
-Previous Goals ← Re-add yesterday's unfinished goals
-Today's Goals  ← Add, reorder, complete, remove
-Today's Timeline ← Visual log of breaks & completions
+Previous Goals ← Triage yesterday's unfinished goals (re-add / backlog / dismiss)
+Today's Goals  ← Add, reorder, complete, archive to backlog
+📦 Backlog     (collapsible) ← Set-aside goals; re-add or release
+Today's Timeline ← Visual log of breaks & completions (◀ ▶ browse up to 7 days)
 Blocks Today  ← Stats + top blocked sites
 Take a Break  ← Cooldown timer / break flow
 ──────────────
@@ -199,6 +200,8 @@ Gōrudo is not about punishment or hard restrictions. It's about three things:
 ### v1.4
 - **Backlog moved up front**: the 📦 Backlog now sits directly under Today's Goals (collapsed by default, expands on click) instead of being buried at the bottom of the popup — set-aside goals are now one glance away
 - **Archive bug fix**: sending a goal to the backlog (📥) no longer leaves a stray copy in the "Previous Goals" triage section — the goal now lands cleanly in the Backlog only
+- **Previous Goals batch triage**: three new one-click actions on the Previous Goals section — ♻️ Re-add all, 📥 All to backlog, ✕ Dismiss all — so morning clean-up is one decision, not a per-goal chore
+- **Timeline day navigation**: ◀ ▶ arrows let you browse up to 7 days of past timelines directly in the popup; past days are read-only
 
 ### v1.3
 - **Settings cleanup**: removed the periodic reminder enable/disable checkbox from the Settings panel — the toggle now lives exclusively on the break start screen, where it's actually relevant

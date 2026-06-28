@@ -1,113 +1,85 @@
 # Gōrudo - Chrome Web Store Description
 
 ## Short Description (132 characters max)
+
 道 - The way to achieve your goals. A mindful productivity tool that blocks distractions and helps you stay focused through accountability.
 
 ## Full Description
 
-**🥷 Protect your goals 🧘**
+Block distracting sites with timed breaks and cooldowns
 
-Gōrudo (ゴール道) is more than a distraction blocker—it's your path to achieving what matters. Built on the philosophy of mindful productivity and self-accountability, Gōrudo helps you stay focused while respecting your need for intentional breaks.
+🎯 GORUDO: THE WAY OF THE GOAL
 
-### 🎯 Core Features
+⚠️ CRITICAL SETUP (DO THIS FIRST) ⚠️ To use this extension, you MUST pin it to your toolbar:
+1) Go to chrome://extensions/ or click the Puzzle Piece icon.
+2) Find GORUDO, click "Details" and activate "Pin to toolbar".
+3) The GORUDO icon will then stay visible next to the address bar. This is where you set goals, block sites and manage breaks.
 
-**Goal-Driven Focus**
-- Set daily goals and track your progress
-- Visual timeline shows your productivity journey
-- Celebrate achievements as you complete tasks
+🥷 WIN THE BATTLE FOR YOUR ATTENTION
+The modern computer is both your greatest tool and your most dangerous enemy. You sit down to follow your Path, but the Focus Saboteurs are only one click away, lurking behind every tab, waiting to hijack your dopamine and steal your time.
 
-**Smart Blocking**
-- Block distracting websites during focus time
-- Create a "No Go Zone" for sites that should never be accessible
-- Whitelist exceptions (e.g., music.youtube.com when youtube.com is blocked)
-- Real-time blocking statistics to understand your habits
+When distraction is this easy, willpower alone isn't enough. You need a Dojo Master that guards the gate. GORUDO doesn't just block sites; it introduces the "Digital Speed Bumps" necessary to snap you out of autopilot and return you to the Way.
 
-**Mindful Breaks**
-- Take intentional breaks with customizable durations
-- Unlock all sites or just one during breaks
-- Extend breaks when needed (with accountability challenges)
-- Track break history in your timeline
+Gorudo is not just a distraction blocker. It is your digital Sensei. Built on the philosophy of Mindful Friction, it acknowledges that everyone needs a break, but ensures those breaks are earned, not mindlessly taken.
+Unlike "hard" blockers that you simply disable when you lose willpower, Gorudo stays on. It doesn't judge, but it makes you aware of every choice, holding you accountable to the path you set for yourself.
 
-**Focus Challenges**
-Before each break, complete a quick challenge to ensure you're making an intentional choice:
-- 📚 **Vocabulary Challenge**: Learn while you focus (11 language pairs available)
-- 🔢 **Math Challenge**: Quick mental math exercises
-- 🎵 **Other**: Light friction to pause and reflect
+🍱 THE GORUDO TOOLKIT
+‣ FOCUS SABOTEURS: Identify the sites that drain your spirit and bar their entry.
+‣ APPROVED PATHS: Whitelist subdomains (like music.youtube.com) so you can work without falling into the main-site abyss.
+‣ TAKE BREAKS, REFOCUS: Breaks aren't free. Complete a challenge to prove your intent. Once the break ends, you are locked into the Dojo. No new breaks until the cooldown expires.
+‣ THE BACKLOG: Not every goal belongs to today. Park unfinished intentions in the Backlog, now tucked right beneath Today's Goals, and pull them back onto the Path when the time is right. Nothing is lost; nothing nags.
+‣ MORNING TRIAGE: Start each day by facing yesterday's unfinished goals head-on. Re-add them all, sweep them all into the Backlog, or dismiss them all. One decisive choice, no lingering clutter.
+‣ THE LOOKING GLASS: Travel back through your last 7 days of focus with the ◀ ▶ timeline navigation. Study your past breaks and battles (read-only: the past cannot be edited, only learned from).
+‣ JUDGMENTAL EMOJIS: Watch your progress tracker get increasingly disappointed (🧐 → 😱 → 🥶) as you snooze your productivity away.
+‣ GOAL-LOCKED REST: No breaks allowed until you've logged at least 3 daily goals. Discipline first. Intentional, always.
 
-**Break Extensions with Accountability**
-- Extend breaks easily with one-click buttons
-- Even-numbered extensions require a light challenge (5 words, easy math, or 3-second pause)
-- Progressive judgmental emojis remind you of your choices
-- See how long you've been on break
+🎨 RETRO PHILOSOPHY, MODERN PRIVACY
+◘ 100% PRIVATE: Your goals, "Focus Saboteurs," and timeline stay on your machine. No servers, no tracking, no data harvesting.
+◘ ZERO-DEFERENCE ACCOUNTABILITY: Gorudo doesn't beg you to work; it simply makes procrastination slightly more annoying than focusing.
 
-**Block Statistics**
-- Track total blocks per day
-- See your top 3 most blocked sites with medal rankings
-- Understand your distraction patterns
+💌 A MESSAGE FROM THE "DEVELOPER"
+GORUDO is a simple passion project to help me master my own focus, and it worked. This tool has been a game-changer for my personal discipline, and I hope it helps you find your own. Since this is a labor of love, I value your feedback. Feel free to leave a rating or review here, or send me a direct email (developer's email at the bottom of the page) if you have feedback or even a story about how GORUDO helped you reclaim your time. I'll be very happy to read it.
+And YES, I did it with gen AI 🤖
 
-**Cooldown System**
-- Enforce time between breaks to maintain focus
-- Reset cooldown with a harder challenge (30 words, difficult math, or longer pause)
-- Prevents break abuse while allowing flexibility
+🙋 FAQ (FREQUENTLY ASKED QUESTIONS)
 
-### 🌍 Language Learning
+Q: Why does Gorudo ask for "scary" permissions like "Read browsing history"?
+> A valid concern, here is what it means:
+   - "Read browsing history" simply lets Gorudo see the URL you are typing so it knows if you've wandered onto a Focus Saboteur's territory.
+   - "Block content" is the "Judo" move required to stop a site from loading.
+We have ZERO interest in your data. Everything stays on your local machine. What happens in the Dojo, stays in the Dojo.
 
-Gōrudo includes vocabulary challenges in 11 language pairs:
-- 🇫🇷 French | 🇩🇪 German | 🇪🇸 Spanish | 🇮🇹 Italian
-- 🇸🇦 Arabic | 🇰🇷 Korean | 🇯🇵 Japanese | 🇺🇦 Ukrainian
-- 🇵🇹 Portuguese | 🇻🇳 Vietnamese | 🇫🇷🇬🇷 French/Greek
+Q: What's the difference between the Backlog and Today's Goals?
+> Today's Goals are the battles you've chosen to fight right now. The Backlog is your holding ground: unfinished goals you've set aside, or ones that aged out of a previous day. It sits collapsed just under Today's Goals so it's always there, but never in your face. Re-add from it when you're ready, or let things go.
 
-For non-Latin scripts (Arabic, Japanese, Korean, Ukrainian), toggle pronunciation guides on/off. Words similar between languages are automatically excluded to maximize learning value.
+Q: What happens to yesterday's unfinished goals?
+> Each morning Gorudo greets you with a Triage section: your leftover intentions from the last session. Decide their fate in one move. Re-add all to today, send All to backlog, or Dismiss all. A clean slate is a focused slate.
 
-### 🎨 Philosophy
+Q: Can I see my past days?
+> Yes. Use the ◀ ▶ arrows on the Timeline to browse up to 7 days of history, every break, every cooldown, every choice. Past days are read-only: the Way is to learn from history, not rewrite it.
 
-Gōrudo believes in:
-- **Intentional choices**: Every break is a conscious decision
-- **Self-accountability**: You set the rules, you follow them
-- **Mindful friction**: Light challenges prevent mindless scrolling
-- **Progress tracking**: See your journey, celebrate wins
-- **Flexibility**: Customize everything to fit your workflow
+Q: Not a question: this UI looks like a 1995 Geocities page 🤮
+> It's so visually unappealing that you'll actually want to close the tab and go back to work. That's not a bug; it's an accidentally brilliant feature. You're welcome.
 
-### ⚙️ Customization
+Q: Is there a mobile version?
+> WIP: the V0 is called "turn your phone off and leave it in another room".
 
-- Adjustable break duration (1-60 minutes)
-- Customizable cooldown period (1-120 minutes)
-- Choose your focus challenge type
-- Manage blocked and whitelisted sites
-- Create a permanent "No Go Zone"
-- Works across normal and incognito windows
+Q: Why can't I just take a break immediately?
+> That is the "Constructive Resistance". By forcing a challenge, Gorudo breaks your "autopilot" browsing. It gives your brain a second to ask: Do I actually need a break, or am I just bored?
 
-### 📊 Privacy & Data
+Q: What if I have an emergency and need a blocked site?
+> Gorudo never truly locks you out. You can always take a break or even "Reset Cooldown" by completing a harder challenge (30 vocabulary words). It's about making the wrong choice difficult, not impossible.
 
-- All data stored locally in your browser
-- No external servers or tracking
-- Your goals, blocks, and progress stay private
-- Works completely offline
+Q: Why do I need to set 3 goals?
+> To nudge you to define a daily intent.
 
-### 🚀 Perfect For
+Q: Does it work in Incognito mode?
+> Only if you allow it. Go to chrome://extensions, click "Details" on Gorudo, and toggle "Allow in Incognito." (Warning: Your Focus Saboteurs will be waiting for you there, too.)
 
-- Students preparing for exams
-- Professionals working on important projects
-- Anyone building better focus habits
-- Language learners who want to practice vocabulary
-- People who want accountability without harsh restrictions
+Q: Does Gorudo sync across my computers?
+> No. To prioritize Total Privacy, your data never leaves your computer or touches a cloud server. Your discipline is local.
 
-### 💡 How It Works
+Q: Will Gorudo eat my RAM like a hungry digital Godzilla?
+> No. Gorudo is lightweight and built on Manifest V3. It only acts when you navigate to a Saboteur. The rest of the time it is silently meditating in the background.
 
-1. **Set your goals** for the day
-2. **Add distracting sites** to your block list
-3. **Work focused** - Gōrudo blocks distractions automatically
-4. **Take breaks intentionally** - Complete a quick challenge first
-5. **Track your progress** - See your timeline and statistics
-6. **Achieve your goals** - Stay accountable to yourself
-
-### 🎯 The Gōrudo Way
-
-Gōrudo (ゴール道) means "Goal Path" - your journey to achieving what matters. It's not about punishment or restriction. It's about creating space for focus, making intentional choices, and building the discipline to reach your goals.
-
-**Start your path today. 🥷 Protect your goals 🧘**
-
----
-
-*Note: Gōrudo requires permission to block websites and manage tabs. All processing happens locally in your browser. No data is sent to external servers.*
-
+Master your focus. Respect your rest. Protect your goals.
