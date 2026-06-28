@@ -5,7 +5,7 @@
 Gōrudo is a **Manifest V3 Chrome extension** that blocks distracting websites and wraps that enforcement in a full **goal-setting, daily timeline, break management, and vocabulary-learning system**. Every break is a conscious choice, backed by a light friction challenge. All data stays local — no accounts, no servers, no tracking.
 
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Gorudo-blue?logo=googlechrome)](https://chromewebstore.google.com/detail/gorudo/nhccoddpkgalplfmondeiodekcoecafo)
-![Version](https://img.shields.io/badge/version-1.3-green)
+![Version](https://img.shields.io/badge/version-1.4-green)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-orange)
 
 ---
@@ -195,6 +195,10 @@ Gōrudo is not about punishment or hard restrictions. It's about three things:
 ---
 
 ## 📋 Changelog
+
+### v1.4
+- **Backlog moved up front**: the 📦 Backlog now sits directly under Today's Goals (collapsed by default, expands on click) instead of being buried at the bottom of the popup — set-aside goals are now one glance away
+- **Archive bug fix**: sending a goal to the backlog (📥) no longer leaves a stray copy in the "Previous Goals" triage section — the goal now lands cleanly in the Backlog only
 
 ### v1.3
 - **Settings cleanup**: removed the periodic reminder enable/disable checkbox from the Settings panel — the toggle now lives exclusively on the break start screen, where it's actually relevant

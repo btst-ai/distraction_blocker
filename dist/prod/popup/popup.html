@@ -75,9 +75,11 @@
     <!-- Previous Day's Goals (shown at start of new day) -->
     <div id="previousGoalsSection" class="section previous-goals-section" style="display:none">
       <h2>🗓️ Previous Goals</h2>
-      <p style="font-size: 11px; margin: 5px 0 10px 0; color: #666;">Re-add goals from your last session:</p>
+      <p style="font-size: 11px; margin: 5px 0 10px 0; color: #666;">Triage goals from your last session:</p>
       <div class="previous-goals-actions">
-        <button id="dismissPreviousGoalsBtn" class="btn btn-secondary btn-small">Dismiss the rest</button>
+        <button id="prevReAddAllBtn" class="btn btn-secondary btn-small">♻️ Re-add all</button>
+        <button id="prevBacklogAllBtn" class="btn btn-secondary btn-small">📥 All to backlog</button>
+        <button id="dismissPreviousGoalsBtn" class="btn btn-secondary btn-small">✕ Dismiss all</button>
       </div>
       <div id="previousGoalsList" class="items-list"></div>
     </div>
@@ -92,9 +94,26 @@
       <div id="goalsList" class="items-list"></div>
     </div>
 
+    <!-- Backlog (Collapsible) -->
+    <div class="section">
+      <h2 class="collapsible-header" id="backlogHeader">
+        <span class="collapse-icon">▶</span> 📦 Backlog
+      </h2>
+      <div id="backlogContent" class="collapsible-content" style="display:none">
+        <p style="font-size: 11px; color: #666; margin-bottom: 10px;">
+          Unfinished goals you set aside or that aged out. Re-add them to today, or let them go.
+        </p>
+        <div id="backlogList" class="items-list"></div>
+      </div>
+    </div>
+
     <!-- Timeline -->
     <div class="section">
-      <h2 id="timelineHeader">📆 Today's Timeline</h2>
+      <div class="timeline-nav">
+        <button id="timelinePrev" class="btn-timeline-nav" title="Older day">◀</button>
+        <h2 id="timelineHeader">📆 Today's Timeline</h2>
+        <button id="timelineNext" class="btn-timeline-nav" title="Newer day" disabled>▶</button>
+      </div>
       <div id="timeline" class="timeline"></div>
     </div>
 

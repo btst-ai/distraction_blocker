@@ -309,6 +309,16 @@ h1 {
 .previous-goals-actions {
   margin-bottom: 10px;
   text-align: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+/* Backlog aging emoji */
+.backlog-age-emoji {
+  display: inline-block;
+  margin-right: 2px;
 }
 
 /* Collapsible Section */
@@ -808,6 +818,28 @@ input[type="number"]:focus {
   box-shadow: 1px 1px 0 rgba(0,0,0,0.3);
 }
 
+/* Color code for goal-action buttons:
+   🚀 send-to-top = pale blue | ▲▼ reorder = white | 📥/📦 backlog = gray (base) | ✕ delete = red */
+.btn-to-top {
+  background: linear-gradient(to bottom, #dff0ff, #aad6f5);
+  color: #1a3a52;
+  border-color: #c5e4fb;
+}
+.btn-to-top:hover {
+  background: linear-gradient(to bottom, #cfe8fc, #93c8ef);
+}
+
+.btn-move-up,
+.btn-move-down {
+  background: linear-gradient(to bottom, #ffffff, #f2f2f2);
+  color: #333;
+  border-color: #ffffff;
+}
+.btn-move-up:hover,
+.btn-move-down:hover {
+  background: linear-gradient(to bottom, #f7f7f7, #e6e6e6);
+}
+
 .btn-remove {
   padding: 3px 8px;
   background: linear-gradient(to bottom, #ff4444, #cc0000);
@@ -834,6 +866,37 @@ input[type="number"]:focus {
   background: #fff;
   border: 2px solid #000;
   padding: 4px;
+}
+
+/* Timeline history navigation */
+.timeline-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.timeline-nav h2 {
+  flex: 1;
+  text-align: center;
+  margin: 0;
+}
+.btn-timeline-nav {
+  flex: 0 0 auto;
+  cursor: pointer;
+  background: linear-gradient(to bottom, #fff, #ddd);
+  border: 2px solid #000;
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+  font-size: 14px;
+  line-height: 1;
+  padding: 4px 8px;
+}
+.btn-timeline-nav:hover:not(:disabled) {
+  background: linear-gradient(to bottom, #fff, #cfcfcf);
+}
+.btn-timeline-nav:disabled {
+  opacity: 0.3;
+  cursor: default;
+  box-shadow: none;
 }
 
 .timeline-item {

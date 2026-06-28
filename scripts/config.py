@@ -38,7 +38,7 @@ MASTER_SITES_RAW = [
     ('chess.com', 'Games', True),
     ('geoguessr.com', 'Games', True),
     ('sporcle.com', 'Games', True),
-    ('lichess.org', 'Games', False),
+    ('lichess.org', 'Games', True),
     ('flagle-game.com', 'Games', False),
 
     ('amazon.com', 'Shopping', True),

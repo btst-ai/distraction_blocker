@@ -1,5 +1,6 @@
 // FULL-FEATURED POPUP
 let currentState = null;
+let timelineOffset = 0; // 0 = today, 1 = yesterday, ... up to 7
 let currentVocabWords = [];
 let revealedCount = 0;
 let challengeType = null; // 'normal', 'special', or 'reset'
@@ -68,6 +69,7 @@ async function loadState() {
 
 
     currentState = response.state;
+    timelineOffset = 0; // Always reset to Today when (re)loading state
 
 
 
@@ -98,6 +100,7 @@ function updateUI() {
     updateBreakWhitelistControls();
     updatePreviousGoals();
     updateGoalsList();
+    updateBacklog();
     updateTimeline();
     updateBlockStats();
     updateSitesList();
@@ -163,6 +166,28 @@ function getCelebrationEmoji(completionIndex) {
   const emojis = ['🥉', '🥈', '🥇', '🏆', '🎖️', '👑', '🚀', '♾️'];
   const index = Math.min(completionIndex, emojis.length - 1);
   return emojis[index];
+}
+
+// Get backlog aging emoji based on whole days spent in the backlog
+function getBacklogAgingEmoji(days) {
+  const d = Math.max(1, days);
+  if (d >= 28) return '🦖'; // 4+ weeks
+  if (d >= 21) return '🪦'; // 3 weeks
+  if (d >= 14) return '🏚️'; // 2 weeks
+  if (d >= 7) return '💀';  // 1 week
+  // 1-6 days
+  const byDay = { 1: '⏳', 2: '👀', 3: '🤔', 4: '🤨', 5: '🙄', 6: '😑' };
+  return byDay[d] || '⏳';
+}
+
+// Compute whole days a backlog item has aged (today midnight - added midnight)
+function backlogAgeDays(item) {
+  const addedTs = item.addedToBacklogTs || (item.addedToBacklogDate ? new Date(item.addedToBacklogDate).getTime() : Date.now());
+  const added = new Date(addedTs);
+  added.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.max(1, Math.floor((today.getTime() - added.getTime()) / 86400000));
 }
 
 // Format elapsed time (only hours and minutes, no seconds)
@@ -336,27 +361,98 @@ function updatePreviousGoals() {
     }
     
     section.style.display = 'block';
-    
+
+    // NOTE: goal text is escaped via escapeHtml(), matching the rest of this file's render pattern.
     goalsList.innerHTML = goalsToShow.map(goal => `
       <div class="item previous-goal-item">
         <span class="goal-text">${goal.completed ? '✅' : '⬜'} ${escapeHtml(goal.text)}</span>
-        <button class="btn btn-add" data-readd-goal-id="${goal.id}">Re-add</button>
+        <div class="goal-actions">
+          <button class="btn-move" title="Re-add to Today" data-readd-prev-id="${goal.id}">♻️</button>
+          <button class="btn-move" title="Send to Backlog" data-backlog-prev-id="${goal.id}">📥</button>
+          <button class="btn-remove" title="Discard" data-discard-prev-id="${goal.id}">✕</button>
+        </div>
       </div>
     `).join('');
-    
-    // Add click handlers for re-adding
-    document.querySelectorAll('[data-readd-goal-id]').forEach(btn => {
-      if (!btn || !btn.dataset) return;
+
+    // Re-add to Today
+    document.querySelectorAll('[data-readd-prev-id]').forEach(btn => {
       btn.addEventListener('click', async () => {
-        if (!btn || !btn.dataset) return;
-        const goalId = parseInt(btn.dataset.readdGoalId);
-        if (!isNaN(goalId)) {
-        await reAddPreviousGoal(goalId);
-        }
+        const goalId = parseInt(btn.dataset.readdPrevId);
+        if (!isNaN(goalId)) await reAddPreviousGoal(goalId);
+      });
+    });
+    // Send to Backlog
+    document.querySelectorAll('[data-backlog-prev-id]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const goalId = parseInt(btn.dataset.backlogPrevId);
+        if (!isNaN(goalId)) await sendMessageAndReload('sendPreviousGoalToBacklog', { goalId });
+      });
+    });
+    // Discard
+    document.querySelectorAll('[data-discard-prev-id]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const goalId = parseInt(btn.dataset.discardPrevId);
+        if (!isNaN(goalId)) await sendMessageAndReload('discardPreviousGoal', { goalId });
       });
     });
   } else {
     section.style.display = 'none';
+  }
+}
+
+// Render the backlog list (reverse-chronological, newest first)
+function updateBacklog() {
+  const backlogList = document.getElementById('backlogList');
+  if (!backlogList) return;
+
+  const backlog = currentState.backlog || [];
+  if (backlog.length === 0) {
+    backlogList.innerHTML = '<div class="empty-state">Backlog is empty. Nice and clear! ✨</div>';
+    return;
+  }
+
+  const sorted = [...backlog].sort((a, b) => (b.addedToBacklogTs || 0) - (a.addedToBacklogTs || 0));
+
+  // NOTE: item text is escaped via escapeHtml(), matching the rest of this file's render pattern.
+  backlogList.innerHTML = sorted.map(item => {
+    const ageDays = backlogAgeDays(item);
+    const emoji = getBacklogAgingEmoji(ageDays);
+    return `
+      <div class="item backlog-item">
+        <span class="goal-text"><span class="backlog-age-emoji" title="${ageDays} day(s) in backlog">${emoji}</span> ${escapeHtml(item.text)}</span>
+        <div class="goal-actions">
+          <button class="btn-move" title="Re-add to Today" data-readd-backlog-id="${item.id}">♻️</button>
+          <button class="btn-remove" title="Delete" data-delete-backlog-id="${item.id}">✕</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  document.querySelectorAll('[data-readd-backlog-id]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const backlogId = parseInt(btn.dataset.readdBacklogId);
+      if (!isNaN(backlogId)) await sendMessageAndReload('reAddBacklogItem', { backlogId });
+    });
+  });
+  document.querySelectorAll('[data-delete-backlog-id]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const backlogId = parseInt(btn.dataset.deleteBacklogId);
+      if (!isNaN(backlogId)) await sendMessageAndReload('deleteBacklogItem', { backlogId });
+    });
+  });
+}
+
+// Small helper: send an action message and reload state on success
+async function sendMessageAndReload(action, payload = {}) {
+  try {
+    const response = await chrome.runtime.sendMessage({ action, ...payload });
+    if (response && response.success) {
+      await loadState();
+    } else {
+      console.error(`❌ Failed: ${action}`, response);
+    }
+  } catch (error) {
+    console.error(`❌ Error in ${action}:`, error);
   }
 }
 
@@ -406,8 +502,10 @@ function updateGoalsList() {
     <div class="item goal-item ${goal.completed ? 'completed' : ''}">
       <span class="goal-text" data-goal-id="${goal.id}">${goal.completed ? '✅' : '⬜'} ${escapeHtml(goal.text)}</span>
       <div class="goal-actions">
+        ${goal.completed ? '' : `<button class="btn-move btn-to-top" title="Send to top" data-totop-id="${goal.id}">🚀</button>`}
         <button class="btn-move btn-move-up" data-move-up-id="${goal.id}">▲</button>
         <button class="btn-move btn-move-down" data-move-down-id="${goal.id}">▼</button>
+        ${goal.completed ? '' : `<button class="btn-move btn-demote" title="Send to backlog" data-demote-id="${goal.id}">📥</button>`}
         <button class="btn-remove" data-remove-goal-id="${goal.id}">✕</button>
       </div>
     </div>
@@ -461,27 +559,86 @@ function updateGoalsList() {
       }
     });
   });
+
+  // Send to top (🚀)
+  document.querySelectorAll('[data-totop-id]').forEach(btn => {
+    if (!btn || !btn.dataset) return;
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const goalId = parseInt(btn.dataset.totopId);
+      if (!isNaN(goalId)) sendMessageAndReload('sendGoalToTop', { goalId });
+    });
+  });
+
+  // Send to backlog (📥)
+  document.querySelectorAll('[data-demote-id]').forEach(btn => {
+    if (!btn || !btn.dataset) return;
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const goalId = parseInt(btn.dataset.demoteId);
+      if (!isNaN(goalId)) sendMessageAndReload('demoteGoalToBacklog', { goalId });
+    });
+  });
 }
 
 // Update timeline
+// Build "📆 Today's Timeline" / "📅 Yesterday's Timeline" / "📅 N Days Ago"
+function getTimelineLabel(offset) {
+  if (offset === 0) return '📆 Today\'s Timeline';
+  if (offset === 1) return '📅 Yesterday\'s Timeline';
+  return `📅 ${offset} Days Ago`;
+}
+
+// Get the timeline array for the current offset (0 = live today, else history)
+function getTimelineForOffset(offset) {
+  if (offset === 0) return currentState.todayTimeline || [];
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - offset);
+  const key = d.toDateString();
+  const history = currentState.timelineHistory || {};
+  return history[key] || [];
+}
+
+// Update the ◀ / ▶ nav button enabled state for the current offset
+function updateTimelineNavButtons() {
+  const prevBtn = document.getElementById('timelinePrev');
+  const nextBtn = document.getElementById('timelineNext');
+  // ▶ goes toward Today: disabled when already on Today
+  if (nextBtn) nextBtn.disabled = (timelineOffset === 0);
+  // ◀ goes toward older days: disabled at the 7-day cap or when no older history exists
+  if (prevBtn) {
+    const olderHasData = getTimelineForOffset(timelineOffset + 1).length > 0;
+    prevBtn.disabled = (timelineOffset >= 7) || !olderHasData;
+  }
+}
+
 function updateTimeline() {
 
   const timeline = document.getElementById('timeline');
-  
+
   if (!timeline) {
     console.error('❌ timeline element not found!');
     return;
   }
-  
-  if (!currentState.todayTimeline || currentState.todayTimeline.length === 0) {
 
-    timeline.innerHTML = '<div class="timeline-empty">No activity yet today</div>';
+  updateTimelineNavButtons();
+
+  const displayTimeline = getTimelineForOffset(timelineOffset);
+  const label = getTimelineLabel(timelineOffset);
+  const isReadOnly = timelineOffset > 0;
+  const timelineHeader = document.getElementById('timelineHeader');
+
+  if (!displayTimeline || displayTimeline.length === 0) {
+
+    if (timelineHeader) timelineHeader.innerHTML = `${label}${isReadOnly ? ' <span style="font-size:0.7em; font-weight:normal; color:#888;">(read-only)</span>' : ''}`;
+    timeline.innerHTML = `<div class="timeline-empty">${isReadOnly ? 'No activity recorded that day' : 'No activity yet today'}</div>`;
     return;
   }
-  
-  // Calculate total break time today
+
+  // Calculate total break time for the displayed day
   let totalBreakMinutes = 0;
-  currentState.todayTimeline.forEach(item => {
+  displayTimeline.forEach(item => {
     if (item.type === 'break') {
       if (item.endedEarly) {
         totalBreakMinutes += (item.actualDuration || 0);
@@ -494,7 +651,7 @@ function updateTimeline() {
   });
 
   // Update header with total break time
-  const timelineHeader = document.getElementById('timelineHeader');
+  const readOnlyHint = isReadOnly ? ' <span style="font-size:0.7em; font-weight:normal; color:#888;">(read-only)</span>' : '';
   if (timelineHeader) {
     if (totalBreakMinutes > 0) {
       // Format: "Today's Timeline (45 min break)"
@@ -505,16 +662,15 @@ function updateTimeline() {
         const mins = totalBreakMinutes % 60;
         timeStr = `${hours}h ${mins}m`;
       }
-      // Use nodeValue to preserve the icon or use innerHTML safely
-      timelineHeader.innerHTML = `📆 Today's Timeline <span style="font-size:0.8em; font-weight:normal;">(Total: ${timeStr} break)</span>`;
+      timelineHeader.innerHTML = `${label} <span style="font-size:0.8em; font-weight:normal;">(Total: ${timeStr} break)</span>${readOnlyHint}`;
     } else {
-      timelineHeader.innerHTML = `📆 Today's Timeline`;
+      timelineHeader.innerHTML = `${label}${readOnlyHint}`;
     }
   }
-  
+
 
   // Sort by timestamp (oldest first)
-  const sorted = [...currentState.todayTimeline].sort((a, b) => a.timestamp - b.timestamp);
+  const sorted = [...displayTimeline].sort((a, b) => a.timestamp - b.timestamp);
   
   // Track goal completions for progressive celebration emojis
   let goalCompletionCount = 0;
@@ -3863,6 +4019,16 @@ if (dismissPreviousGoalsBtn) {
   });
 }
 
+// Previous goals bulk actions
+const prevReAddAllBtn = document.getElementById('prevReAddAllBtn');
+if (prevReAddAllBtn) {
+  prevReAddAllBtn.addEventListener('click', () => sendMessageAndReload('reAddAllPreviousGoals'));
+}
+const prevBacklogAllBtn = document.getElementById('prevBacklogAllBtn');
+if (prevBacklogAllBtn) {
+  prevBacklogAllBtn.addEventListener('click', () => sendMessageAndReload('sendAllPreviousGoalsToBacklog'));
+}
+
 // Sites (Blocked)
 const addSiteBtn = document.getElementById('addSiteBtn');
 if (addSiteBtn) {
@@ -4070,6 +4236,29 @@ function setupCollapsible(headerId, contentId) {
 setupCollapsible('blockedSitesHeader', 'blockedSitesContent');
 setupCollapsible('whitelistHeader', 'whitelistContent');
 setupCollapsible('nogoListHeader', 'nogoListContent');
+setupCollapsible('backlogHeader', 'backlogContent');
+
+// Timeline history navigation (read-only browsing of the last 7 days)
+const timelinePrevBtn = document.getElementById('timelinePrev');
+if (timelinePrevBtn) {
+  timelinePrevBtn.addEventListener('click', () => {
+    // ◀ : go to an older day (don't re-fetch state, just re-render)
+    if (timelineOffset < 7 && getTimelineForOffset(timelineOffset + 1).length > 0) {
+      timelineOffset++;
+      updateTimeline();
+    }
+  });
+}
+const timelineNextBtn = document.getElementById('timelineNext');
+if (timelineNextBtn) {
+  timelineNextBtn.addEventListener('click', () => {
+    // ▶ : go toward Today
+    if (timelineOffset > 0) {
+      timelineOffset--;
+      updateTimeline();
+    }
+  });
+}
 
 // Break whitelist controls event listeners
 const removeFromBreakWhitelistEl = document.getElementById('removeFromBreakWhitelist');

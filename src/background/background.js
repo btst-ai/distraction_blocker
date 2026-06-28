@@ -196,6 +196,8 @@ let state = {
   lastGoalDate: null,
   hasSetGoalsToday: false,
   todayTimeline: [],
+  backlog: [], // [{ id, text, addedToBacklogDate, addedToBacklogTs }]
+  timelineHistory: {}, // { 'toDateString()': [ ...timeline items ] } rolling 7 days
   vocabulary: [],
   blockStats: {
     totalBlocksToday: 0,
@@ -653,7 +655,13 @@ function initializeState() {
     if (savedState.showPreviousGoals !== undefined) {
       state.showPreviousGoals = savedState.showPreviousGoals;
     }
-    
+    if (savedState.backlog !== undefined) {
+      state.backlog = savedState.backlog;
+    }
+    if (savedState.timelineHistory !== undefined) {
+      state.timelineHistory = savedState.timelineHistory;
+    }
+
     console.log(`✅ State loaded from ${source}`);
     console.log('📊 Loaded state:', {
       hasGoals: state.dailyGoals?.length > 0,
@@ -763,6 +771,36 @@ async function clearOldBlockingRules() {
   console.log('✅ Using webNavigation and tabs for blocking');
 }
 
+// ---- Backlog & timeline-history helpers ----
+
+// Midnight (local) timestamp for a Date or a toDateString() string
+function midnightTs(dateOrStr) {
+  const d = new Date(dateOrStr);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
+// Whole days between two midnight-aligned dates (positive if `from` is older than `to`)
+function daysBetween(fromDateStr, toDateStr) {
+  return Math.floor((midnightTs(toDateStr) - midnightTs(fromDateStr)) / 86400000);
+}
+
+// Push a goal text onto the backlog, deduping by lowercased text
+function pushToBacklog(text, dateStr) {
+  if (!Array.isArray(state.backlog)) state.backlog = [];
+  const key = text.trim().toLowerCase();
+  if (!key) return false;
+  const exists = state.backlog.some(b => (b.text || '').trim().toLowerCase() === key);
+  if (exists) return false;
+  state.backlog.push({
+    id: Date.now() + Math.floor(Math.random() * 1000),
+    text: text.trim(),
+    addedToBacklogDate: dateStr,
+    addedToBacklogTs: Date.now()
+  });
+  return true;
+}
+
 // Check if it's a new day (reset goals)
 function checkNewDay() {
   const today = new Date().toDateString();
@@ -786,14 +824,41 @@ function checkNewDay() {
     }
     saveState();
   } else if (state.lastGoalDate !== today) {
-    // New day detected - save yesterday's goals before resetting
+    // New day detected - archive timeline, roll over goals, age out backlog
     console.log('🌅 New day detected! Previous:', state.lastGoalDate, 'Current:', today);
-    console.log('🔄 Saving previous goals and resetting');
-    
-    // Save previous day's goals (only if they exist)
+    console.log('🔄 Archiving timeline, saving previous goals and resetting');
+
+    if (!Array.isArray(state.backlog)) state.backlog = [];
+    if (!state.timelineHistory || typeof state.timelineHistory !== 'object') state.timelineHistory = {};
+
+    // 1. Archive the ending day's timeline (Module 3), excluding goal_removed events
+    if (Array.isArray(state.todayTimeline) && state.todayTimeline.length > 0) {
+      const archived = state.todayTimeline.filter(item => item.type !== 'goal_removed');
+      if (archived.length > 0) {
+        state.timelineHistory[state.lastGoalDate] = archived;
+      }
+    }
+    // Prune any timeline history older than 7 days (protect storage quota)
+    Object.keys(state.timelineHistory).forEach(key => {
+      if (daysBetween(key, today) > 7) {
+        delete state.timelineHistory[key];
+      }
+    });
+
+    // 2. Auto-backlog goals the user never acted on. Whatever is still in
+    //    previousDayGoals belongs to two days ago - push unfinished ones to backlog.
+    if (Array.isArray(state.previousDayGoals)) {
+      state.previousDayGoals.forEach(g => {
+        if (g && !g.completed) {
+          pushToBacklog(g.text, today);
+        }
+      });
+    }
+
+    // 3. Roll yesterday's goals into previousDayGoals (completed + unfinished)
     state.previousDayGoals = state.dailyGoals && state.dailyGoals.length > 0 ? [...state.dailyGoals] : [];
     state.showPreviousGoals = state.previousDayGoals.length > 0;
-    
+
     // Reset daily data
     state.dailyGoals = [];
     state.hasSetGoalsToday = false;
@@ -810,6 +875,8 @@ function checkNewDay() {
     if (!state.dailyGoals) state.dailyGoals = [];
     if (!state.todayTimeline) state.todayTimeline = [];
     if (!state.previousDayGoals) state.previousDayGoals = [];
+    if (!Array.isArray(state.backlog)) state.backlog = [];
+    if (!state.timelineHistory || typeof state.timelineHistory !== 'object') state.timelineHistory = {};
   }
 }
 
@@ -1269,6 +1336,38 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ success: false, error: 'Cannot move down' });
     }
 
+  } else if (request.action === 'sendGoalToTop') {
+    const index = state.dailyGoals.findIndex(g => g.id === request.goalId);
+    if (index > 0) {
+      const [goal] = state.dailyGoals.splice(index, 1);
+      state.dailyGoals.unshift(goal);
+      saveState();
+      sendResponse({ success: true });
+    } else {
+      // Already at top (index 0) or not found
+      sendResponse({ success: index === 0 });
+    }
+
+  } else if (request.action === 'demoteGoalToBacklog') {
+    const goal = state.dailyGoals.find(g => g.id === request.goalId);
+    if (goal) {
+      const today = new Date().toDateString();
+      pushToBacklog(goal.text, today);
+      state.dailyGoals = state.dailyGoals.filter(g => g.id !== request.goalId);
+      // Also drop any matching entry from previousDayGoals so the archived goal
+      // doesn't resurface in the "Previous Goals" triage section (it now lives in the backlog).
+      const demotedKey = goal.text.trim().toLowerCase();
+      if (Array.isArray(state.previousDayGoals)) {
+        state.previousDayGoals = state.previousDayGoals.filter(
+          g => (g.text || '').trim().toLowerCase() !== demotedKey
+        );
+      }
+      saveState();
+      sendResponse({ success: true });
+    } else {
+      sendResponse({ success: false, error: 'Goal not found' });
+    }
+
   } else if (request.action === 'removeGoal') {
     const goal = state.dailyGoals.find(g => g.id === request.goalId);
     if (goal) {
@@ -1563,6 +1662,73 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     state.previousDayGoals = [];
     saveState();
     sendResponse({ success: true });
+
+  } else if (request.action === 'sendPreviousGoalToBacklog') {
+    const today = new Date().toDateString();
+    const prevGoal = (state.previousDayGoals || []).find(g => g.id === request.goalId);
+    if (prevGoal) {
+      if (!prevGoal.completed) {
+        pushToBacklog(prevGoal.text, today);
+      }
+      state.previousDayGoals = state.previousDayGoals.filter(g => g.id !== request.goalId);
+      state.showPreviousGoals = state.previousDayGoals.length > 0;
+      saveState();
+      sendResponse({ success: true });
+    } else {
+      sendResponse({ success: false, error: 'Goal not found' });
+    }
+
+  } else if (request.action === 'discardPreviousGoal') {
+    const before = (state.previousDayGoals || []).length;
+    state.previousDayGoals = (state.previousDayGoals || []).filter(g => g.id !== request.goalId);
+    state.showPreviousGoals = state.previousDayGoals.length > 0;
+    saveState();
+    sendResponse({ success: before !== state.previousDayGoals.length });
+
+  } else if (request.action === 'reAddAllPreviousGoals') {
+    const existingTexts = (state.dailyGoals || []).map(g => g.text.toLowerCase());
+    let i = 0;
+    (state.previousDayGoals || []).forEach(g => {
+      if (!existingTexts.includes(g.text.toLowerCase())) {
+        state.dailyGoals.push({ id: Date.now() + (i++), text: g.text, completed: false });
+      }
+    });
+    if (state.dailyGoals.length >= 3) state.hasSetGoalsToday = true;
+    state.previousDayGoals = [];
+    state.showPreviousGoals = false;
+    saveState();
+    sendResponse({ success: true });
+
+  } else if (request.action === 'sendAllPreviousGoalsToBacklog') {
+    const today = new Date().toDateString();
+    (state.previousDayGoals || []).forEach(g => {
+      if (!g.completed) pushToBacklog(g.text, today);
+    });
+    state.previousDayGoals = [];
+    state.showPreviousGoals = false;
+    saveState();
+    sendResponse({ success: true });
+
+  } else if (request.action === 'reAddBacklogItem') {
+    const item = (state.backlog || []).find(b => b.id === request.backlogId);
+    if (item) {
+      const exists = (state.dailyGoals || []).some(g => g.text.toLowerCase() === item.text.toLowerCase());
+      if (!exists) {
+        state.dailyGoals.push({ id: Date.now(), text: item.text, completed: false });
+        if (state.dailyGoals.length >= 3) state.hasSetGoalsToday = true;
+      }
+      state.backlog = state.backlog.filter(b => b.id !== request.backlogId);
+      saveState();
+      sendResponse({ success: true });
+    } else {
+      sendResponse({ success: false, error: 'Backlog item not found' });
+    }
+
+  } else if (request.action === 'deleteBacklogItem') {
+    const before = (state.backlog || []).length;
+    state.backlog = (state.backlog || []).filter(b => b.id !== request.backlogId);
+    saveState();
+    sendResponse({ success: before !== state.backlog.length });
 
   } else if (request.action === 'reloadVocab') {
     const language = request.language || state.vocabLanguage;
