@@ -1,6 +1,8 @@
 // FULL-FEATURED POPUP
 let currentState = null;
 let timelineOffset = 0; // 0 = today, 1 = yesterday, ... up to 7
+let lastTodayTimelineLen = 0; // used to detect new timeline events while browsing past days
+let lastDailyGoalsLen = 0;   // used to detect new goals added while browsing past days
 let currentVocabWords = [];
 let revealedCount = 0;
 let challengeType = null; // 'normal', 'special', or 'reset'
@@ -70,7 +72,13 @@ async function loadState() {
     console.log('[LANG-DEBUG] Step 6.3: State received. vocabLanguage:', response.state.vocabLanguage);
     console.log('[LANG-DEBUG] Step 6.4: Vocabulary count in state:', response.state.vocabulary?.length || 0);
     currentState = response.state;
-    timelineOffset = 0; // Always reset to Today when (re)loading state
+    const todayLen = (currentState.todayTimeline || []).length;
+    const goalsLen = (currentState.dailyGoals || []).length;
+    if (timelineOffset > 0 && (todayLen > lastTodayTimelineLen || goalsLen > lastDailyGoalsLen)) {
+      timelineOffset = 0; // new activity today — bring user back
+    }
+    lastTodayTimelineLen = todayLen;
+    lastDailyGoalsLen = goalsLen;
     console.log('[LANG-DEBUG] Step 6.5: State assigned to currentState');
     console.log('✅ State loaded successfully');
     console.log('[LANG-DEBUG] Step 6.6: Calling updateUI()...');
@@ -588,8 +596,8 @@ function updateGoalsList() {
 // Build "📆 Today's Timeline" / "📅 Yesterday's Timeline" / "📅 N Days Ago"
 function getTimelineLabel(offset) {
   if (offset === 0) return '📆 Today\'s Timeline';
-  if (offset === 1) return '📅 Yesterday\'s Timeline';
-  return `📅 ${offset} Days Ago`;
+  if (offset === 1) return '🕰️ Yesterday\'s Timeline';
+  return `🕰️ ${offset} Days Ago`;
 }
 
 // Get the timeline array for the current offset (0 = live today, else history)
@@ -632,9 +640,11 @@ function updateTimeline() {
   const isReadOnly = timelineOffset > 0;
   const timelineHeader = document.getElementById('timelineHeader');
 
+  if (timelineHeader) timelineHeader.classList.toggle('timeline-traveling', isReadOnly);
+
   if (!displayTimeline || displayTimeline.length === 0) {
     console.log('ℹ️ No timeline events to display');
-    if (timelineHeader) timelineHeader.innerHTML = `${label}${isReadOnly ? ' <span style="font-size:0.7em; font-weight:normal; color:#888;">(read-only)</span>' : ''}`;
+    if (timelineHeader) timelineHeader.innerHTML = `${label}`;
     timeline.innerHTML = `<div class="timeline-empty">${isReadOnly ? 'No activity recorded that day' : 'No activity yet today'}</div>`;
     return;
   }
@@ -653,22 +663,20 @@ function updateTimeline() {
     }
   });
 
-  // Update header with total break time
-  const readOnlyHint = isReadOnly ? ' <span style="font-size:0.7em; font-weight:normal; color:#888;">(read-only)</span>' : '';
-  if (timelineHeader) {
-    if (totalBreakMinutes > 0) {
-      // Format: "Today's Timeline (45 min break)"
-      // If over 60 mins, show hours: "1h 15m break"
-      let timeStr = `${totalBreakMinutes} min`;
-      if (totalBreakMinutes >= 60) {
-        const hours = Math.floor(totalBreakMinutes / 60);
-        const mins = totalBreakMinutes % 60;
-        timeStr = `${hours}h ${mins}m`;
-      }
-      timelineHeader.innerHTML = `${label} <span style="font-size:0.8em; font-weight:normal;">(Total: ${timeStr} break)</span>${readOnlyHint}`;
+  // Update header with total break time — three flex slots: label | break total | badge
+  let timeStr = '';
+  if (totalBreakMinutes > 0) {
+    if (totalBreakMinutes >= 60) {
+      const hours = Math.floor(totalBreakMinutes / 60);
+      const mins = totalBreakMinutes % 60;
+      timeStr = `${hours}h ${mins}m`;
     } else {
-      timelineHeader.innerHTML = `${label}${readOnlyHint}`;
+      timeStr = `${totalBreakMinutes} min`;
     }
+  }
+  if (timelineHeader) {
+    const breakStr = timeStr ? `<span class="timeline-header-break">(Total: ${timeStr} break)</span>` : '';
+    timelineHeader.innerHTML = `${label}<br><span class="timeline-header-sub">${breakStr}</span>`;
   }
 
   console.log('✅ Displaying', displayTimeline.length, 'timeline events');

@@ -5,7 +5,7 @@
 Gōrudo is a **Manifest V3 Chrome extension** that blocks distracting websites and wraps that enforcement in a full **goal-setting, daily timeline, break management, and vocabulary-learning system**. Every break is a conscious choice, backed by a light friction challenge. All data stays local — no accounts, no servers, no tracking.
 
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Gorudo-blue?logo=googlechrome)](https://chromewebstore.google.com/detail/gorudo/nhccoddpkgalplfmondeiodekcoecafo)
-![Version](https://img.shields.io/badge/version-1.4-green)
+![Version](https://img.shields.io/badge/version-1.4.1-green)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-orange)
 
 ---
@@ -196,6 +196,12 @@ Gōrudo is not about punishment or hard restrictions. It's about three things:
 ---
 
 ## 📋 Changelog
+
+### v1.4.1
+- **Timeline navigation bug fix**: clicking ◀ to view a past day no longer snaps back to today — the selected day now persists through the 1-second auto-refresh cycle
+- **Smart auto-return**: while browsing a past day, the view automatically returns to today when a new break, goal completion, or new goal is added
+- **Time-travelling indicator**: past-day headers now show a 🕰️ emoji in the title and a subtle lavender tint, making it clear the view is not live
+- **Stable nav layout**: the ◀ ▶ buttons and timeline header are now fixed-width and fixed-height, so nothing shifts horizontally or vertically when navigating between days
 
 ### v1.4
 - **Backlog moved up front**: the 📦 Backlog now sits directly under Today's Goals (collapsed by default, expands on click) instead of being buried at the bottom of the popup — set-aside goals are now one glance away
