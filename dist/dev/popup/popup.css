@@ -748,6 +748,17 @@ input[type="number"]:focus {
   cursor: pointer;
 }
 
+.goal-item.boosted {
+  background: linear-gradient(to bottom, #f3f9fe, #e8f4fd);
+  border-color: #cfe6fb;
+}
+
+.btn-to-top.boosted-active {
+  background: linear-gradient(to bottom, #aad6f5, #7bbde8);
+  border-color: #7bbde8;
+  border-style: inset;
+}
+
 .goal-item.completed {
   background: linear-gradient(to bottom, #90ff90, #60cc60);
   border-color: #00ff00;
