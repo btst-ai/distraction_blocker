@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rtk grep *)",
+      "Bash(xargs ls -la)",
+      "Bash(rtk ls *)",
+      "Bash(rtk diff *)",
+      "Bash(rtk find *)",
+      "Bash(rtk read *)",
+      "Bash(md5 /Users/bdufresne/repo/distraction_blocker/dist/prod/assets/icons/gorudo_128.png /Users/bdufresne/repo/distraction_blocker/dist/prod/assets/icons/gorudo_128_dev.png /Users/bdufresne/repo/distraction_blocker/dist/prod/assets/icons/icon128.png)",
+      "Bash(md5 /Users/bdufresne/repo/distraction_blocker/dist/prod/assets/icons/icon16.png)",
+      "Bash(rtk git *)",
+      "Bash(python3 scripts/build.py dev)",
+      "Bash(python3 scripts/build.py prod)"
+    ]
+  }
+}
