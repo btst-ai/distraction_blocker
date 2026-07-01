@@ -1216,7 +1216,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const newGoal = {
       id: Date.now(),
       text: request.goalText.trim(),
-      completed: false
+      completed: false,
+      boosted: false
     };
     state.dailyGoals.push(newGoal);
 
@@ -1278,14 +1279,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   } else if (request.action === 'sendGoalToTop') {
     const index = state.dailyGoals.findIndex(g => g.id === request.goalId);
-    if (index > 0) {
-      const [goal] = state.dailyGoals.splice(index, 1);
-      state.dailyGoals.unshift(goal);
+    if (index >= 0) {
+      const goal = state.dailyGoals[index];
+      goal.boosted = !goal.boosted;
+      if (goal.boosted) {
+        state.dailyGoals.splice(index, 1);
+        state.dailyGoals.unshift(goal);
+      }
       saveState();
-      sendResponse({ success: true });
+      sendResponse({ success: true, boosted: goal.boosted });
     } else {
-      // Already at top (index 0) or not found
-      sendResponse({ success: index === 0 });
+      sendResponse({ success: false, error: 'Goal not found' });
     }
 
   } else if (request.action === 'demoteGoalToBacklog') {

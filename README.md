@@ -5,7 +5,7 @@
 Gōrudo is a **Manifest V3 Chrome extension** that blocks distracting websites and wraps that enforcement in a full **goal-setting, daily timeline, break management, and vocabulary-learning system**. Every break is a conscious choice, backed by a light friction challenge. All data stays local — no accounts, no servers, no tracking.
 
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Gorudo-blue?logo=googlechrome)](https://chromewebstore.google.com/detail/gorudo/nhccoddpkgalplfmondeiodekcoecafo)
-![Version](https://img.shields.io/badge/version-1.4.1-green)
+![Version](https://img.shields.io/badge/version-1.4.3-green)
 ![Manifest](https://img.shields.io/badge/Manifest-V3-orange)
 
 ---
@@ -196,6 +196,11 @@ Gōrudo is not about punishment or hard restrictions. It's about three things:
 ---
 
 ## 📋 Changelog
+
+### v1.4.3
+- **Persistent boost**: the 🚀 button now toggles a lasting `boosted` state on a goal — boosted tasks float to the top of the incomplete list and show a soft blue tint, lighter than the button itself; clicking 🚀 again removes the boost
+- **Backlog count**: the 📦 Backlog section header now shows the number of items in parentheses (e.g. *"📦 Backlog (3)"*) at a glance without expanding
+- **Cleaner past timelines**: "task removed" events are hidden when browsing past days — only completions and breaks are shown, reducing noise in historical views
 
 ### v1.4.1
 - **Timeline navigation bug fix**: clicking ◀ to view a past day no longer snaps back to today — the selected day now persists through the 1-second auto-refresh cycle

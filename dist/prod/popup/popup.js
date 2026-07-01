@@ -414,6 +414,15 @@ function updateBacklog() {
   if (!backlogList) return;
 
   const backlog = currentState.backlog || [];
+
+  const backlogHeader = document.getElementById('backlogHeader');
+  if (backlogHeader) {
+    const collapseIcon = backlogHeader.querySelector('.collapse-icon');
+    const count = backlog.length;
+    backlogHeader.textContent = ` 📦 Backlog${count > 0 ? ` (${count})` : ''}`;
+    if (collapseIcon) backlogHeader.prepend(collapseIcon);
+  }
+
   if (backlog.length === 0) {
     backlogList.innerHTML = '<div class="empty-state">Backlog is empty. Nice and clear! ✨</div>';
     return;
@@ -503,14 +512,17 @@ function updateGoalsList() {
     if (a.completed !== b.completed) {
       return a.completed ? -1 : 1; // Completed first
     }
+    if (!a.completed && a.boosted !== b.boosted) {
+      return a.boosted ? -1 : 1; // Boosted incomplete tasks above non-boosted
+    }
     return a.originalIndex - b.originalIndex; // Preserve order for same completion status
   });
   
   goalsList.innerHTML = sortedGoals.map(goal => `
-    <div class="item goal-item ${goal.completed ? 'completed' : ''}">
+    <div class="item goal-item ${goal.completed ? 'completed' : ''} ${goal.boosted && !goal.completed ? 'boosted' : ''}">
       <span class="goal-text" data-goal-id="${goal.id}">${goal.completed ? '✅' : '⬜'} ${escapeHtml(goal.text)}</span>
       <div class="goal-actions">
-        ${goal.completed ? '' : `<button class="btn-move btn-to-top" title="Send to top" data-totop-id="${goal.id}">🚀</button>`}
+        ${goal.completed ? '' : `<button class="btn-move btn-to-top ${goal.boosted ? 'boosted-active' : ''}" title="${goal.boosted ? 'Unboost' : 'Boost to top'}" data-totop-id="${goal.id}">🚀</button>`}
         <button class="btn-move btn-move-up" data-move-up-id="${goal.id}">▲</button>
         <button class="btn-move btn-move-down" data-move-down-id="${goal.id}">▼</button>
         ${goal.completed ? '' : `<button class="btn-move btn-demote" title="Send to backlog" data-demote-id="${goal.id}">📥</button>`}
@@ -738,6 +750,7 @@ function updateTimeline() {
         </div>
       `;
     } else if (item.type === 'goal_removed') {
+      if (isReadOnly) return '';
       return `
         <div class="timeline-item goal-removed">
           <div class="timeline-time">${time}</div>

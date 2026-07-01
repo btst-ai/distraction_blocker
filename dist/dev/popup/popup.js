@@ -754,6 +754,7 @@ function updateTimeline() {
         </div>
       `;
     } else if (item.type === 'goal_removed') {
+      if (isReadOnly) return '';
       return `
         <div class="timeline-item goal-removed">
           <div class="timeline-time">${time}</div>
